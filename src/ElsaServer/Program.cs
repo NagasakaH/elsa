@@ -2,8 +2,6 @@ using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
-using Elsa.Activities.RabbitMq.Extensions;
-using Elsa.Options;
 using Microsoft.AspNetCore.Mvc;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
@@ -92,7 +90,6 @@ class Program
                 })
                 .AddActivity<PublishMessage>() // PublishMessageアクティビティを追加
                 .AddActivity<WaitMessage>() // WaitMessageアクティビティを追加
-                .AddActivitiesFrom<Elsa.Activities.RabbitMq.RabbitMqMessageReceived>()
                 .AddActivitiesFrom<Program>()
                 .AddWorkflowsFrom<Program>()
             );
@@ -110,6 +107,7 @@ class Program
         };
         services.AddSingleton<IConnectionFactory>(connectionFactory);
         
+
         // CORSの設定
         services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
         // MVCの設定
