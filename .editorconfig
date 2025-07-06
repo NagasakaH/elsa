@@ -1,0 +1,13 @@
+[*.sln]
+charset = utf-8-bom
+end_of_line = crlf
+tab_width = 4
+indent_style = space
+indent_size = 4
+
+[*.{cs, csproj}]
+charset = utf-8-bom
+end_of_line = lf
+tab_width = 4
+indent_style = space
+indent_size = 4
