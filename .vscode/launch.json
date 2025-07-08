@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch ElsaServer (localhost:5001)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/ElsaServer/bin/Debug/net8.0/ElsaServer.dll",
+            "args": ["--urls", "http://localhost:5001"],
+            "cwd": "${workspaceFolder}/src/ElsaServer",
+            "console": "internalConsole",
+            "stopAtEntry": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        }
+    ]
+}
