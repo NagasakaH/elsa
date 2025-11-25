@@ -54,11 +54,31 @@ public class PublishMessage : CodeActivity
                 // Check if the value is wrapped in Input<T>
                 if (storedValueType.IsGenericType && storedValueType.GetGenericTypeDefinition() == typeof(Input<>))
                 {
-                    actualValue = GetValueFromInput(context, storedValue, property.PropertyType);
+                    // For enum properties, the input type is string, so we need to get string first then convert
+                    var inputValueType = property.PropertyType.IsEnum ? typeof(string) : property.PropertyType;
+                    var rawValue = GetValueFromInput(context, storedValue, inputValueType);
+                    
+                    // If the property is an enum and we got a string, parse it
+                    if (property.PropertyType.IsEnum && rawValue is string enumString && !string.IsNullOrEmpty(enumString))
+                    {
+                        actualValue = Enum.Parse(property.PropertyType, enumString);
+                    }
+                    else
+                    {
+                        actualValue = rawValue;
+                    }
                 }
                 else
                 {
-                    actualValue = storedValue.ConvertTo(property.PropertyType);
+                    // For enum properties, handle string to enum conversion
+                    if (property.PropertyType.IsEnum && storedValue is string enumString && !string.IsNullOrEmpty(enumString))
+                    {
+                        actualValue = Enum.Parse(property.PropertyType, enumString);
+                    }
+                    else
+                    {
+                        actualValue = storedValue.ConvertTo(property.PropertyType);
+                    }
                 }
 
                 if (actualValue != null)

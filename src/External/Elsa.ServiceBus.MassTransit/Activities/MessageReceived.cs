@@ -74,7 +74,12 @@ public class MessageReceived : Trigger<object>
 
         foreach (var property in properties)
         {
-            var value = property.GetValue(message);
+            var rawValue = property.GetValue(message);
+            
+            // Convert enum values to string for output
+            var value = property.PropertyType.IsEnum && rawValue != null 
+                ? rawValue.ToString() 
+                : rawValue;
             
             // Check if an Output wrapper already exists in SyntheticProperties
             if (SyntheticProperties.TryGetValue(property.Name, out var existingOutput) && existingOutput != null)
