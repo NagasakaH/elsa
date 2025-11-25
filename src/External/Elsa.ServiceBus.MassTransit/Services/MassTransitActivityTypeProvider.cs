@@ -122,7 +122,8 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
     {
         var inputDescriptors = new List<InputDescriptor>();
         var properties = messageType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(p => p.CanRead && p.CanWrite);
+            .Where(p => p.CanRead && p.CanWrite)
+            .Where(p => !p.PropertyType.IsEnum); // Skip enum properties for now as they cause serialization issues
 
         foreach (var property in properties)
         {
@@ -132,12 +133,14 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
             
             var uiHint = GetUIHintForType(property.PropertyType);
 
+            // Type should be the naked type (e.g., string, not Input<string>)
+            // IsWrapped=true tells Elsa that the value stored in SyntheticProperties is already wrapped in Input<T>
             var inputDescriptor = new InputDescriptor
             {
                 Name = property.Name,
                 DisplayName = propertyDisplayName,
                 Description = propertyDescription,
-                Type = property.PropertyType,
+                Type = property.PropertyType,  // Use naked type, not Input<T>
                 IsWrapped = true,
                 IsSynthetic = true,
                 UIHint = uiHint,
@@ -158,23 +161,22 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
     {
         var outputDescriptors = new List<OutputDescriptor>();
         var properties = messageType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(p => p.CanRead);
+            .Where(p => p.CanRead)
+            .Where(p => !p.PropertyType.IsEnum); // Skip enum properties for now
 
         foreach (var property in properties)
         {
             var propertyDisplayName = property.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName 
                 ?? property.Name.Humanize(LetterCasing.Title);
             var propertyDescription = property.GetCustomAttribute<DescriptionAttribute>()?.Description;
-            
-            var openOutputType = typeof(Output<>);
-            var outputType = openOutputType.MakeGenericType(property.PropertyType);
 
+            // Type should be the naked type (e.g., string, not Output<string>)
             var outputDescriptor = new OutputDescriptor
             {
                 Name = property.Name,
                 DisplayName = propertyDisplayName,
                 Description = propertyDescription,
-                Type = outputType,
+                Type = property.PropertyType,  // Use naked type, not Output<T>
                 IsSynthetic = true,
                 ValueGetter = activity => activity.SyntheticProperties.GetValueOrDefault(property.Name),
                 ValueSetter = (activity, value) => activity.SyntheticProperties[property.Name] = value!
@@ -196,9 +198,6 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
         
         if (propertyType == typeof(string))
             return InputUIHints.SingleLine;
-        
-        if (propertyType.IsEnum)
-            return InputUIHints.DropDown;
         
         if (IsNumericType(propertyType))
             return InputUIHints.SingleLine;

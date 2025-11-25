@@ -17,18 +17,22 @@ public class WorkflowMessageConsumer<T>(IStimulusSender stimulusSender) : IConsu
         var cancellationToken = context.CancellationToken;
         var messageType = typeof(T);
         var message = context.Message;
+        
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName(messageType);
         var stimulus = new MessageReceivedBookmarkPayload(messageType);
         var correlationId = context.CorrelationId?.ToString();
+        
         var input = new Dictionary<string, object>
         {
             [MessageReceived.InputKey] = message
         };
+        
         var stimulusMetadata = new StimulusMetadata
         {
             CorrelationId = correlationId,
             Input = input
         };
+        
         await stimulusSender.SendAsync(activityTypeName, stimulus, stimulusMetadata, cancellationToken);
     }
 }

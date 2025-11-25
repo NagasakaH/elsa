@@ -5,9 +5,7 @@ using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.ServiceBus.MassTransit.Services;
 using Elsa.Workflows;
-using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.UIHints;
 using MassTransit;
 
 namespace Elsa.ServiceBus.MassTransit.Activities;
@@ -41,7 +39,6 @@ public class PublishMessage : CodeActivity
     /// </summary>
     private object BuildMessageFromInputs(ActivityExecutionContext context)
     {
-        // Create an instance of the message type
         var message = Activator.CreateInstance(MessageType)!;
         
         var properties = MessageType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
@@ -49,15 +46,78 @@ public class PublishMessage : CodeActivity
 
         foreach (var property in properties)
         {
-            // Try to get the input value for this property from SyntheticProperties
-            if (SyntheticProperties.TryGetValue(property.Name, out var inputValue) && inputValue != null)
+            if (SyntheticProperties.TryGetValue(property.Name, out var storedValue) && storedValue != null)
             {
-                // Convert the value to the property type if necessary
-                var convertedValue = inputValue.ConvertTo(property.PropertyType);
-                property.SetValue(message, convertedValue);
+                object? actualValue = null;
+                var storedValueType = storedValue.GetType();
+                
+                // Check if the value is wrapped in Input<T>
+                if (storedValueType.IsGenericType && storedValueType.GetGenericTypeDefinition() == typeof(Input<>))
+                {
+                    actualValue = GetValueFromInput(context, storedValue, property.PropertyType);
+                }
+                else
+                {
+                    actualValue = storedValue.ConvertTo(property.PropertyType);
+                }
+
+                if (actualValue != null)
+                {
+                    property.SetValue(message, actualValue);
+                }
             }
         }
 
         return message;
+    }
+    
+    /// <summary>
+    /// Gets the value from an Input wrapper using the ActivityExecutionContext.
+    /// </summary>
+    private static object? GetValueFromInput(ActivityExecutionContext context, object inputWrapper, Type targetType)
+    {
+        try
+        {
+            // Use the ActivityExecutionContext.Get<T>(Input<T>) instance method
+            var getMethod = typeof(ActivityExecutionContext)
+                .GetMethods()
+                .Where(m => m.Name == "Get" && m.IsGenericMethod)
+                .FirstOrDefault(m => 
+                {
+                    var parameters = m.GetParameters();
+                    if (parameters.Length != 1) return false;
+                    var paramType = parameters[0].ParameterType;
+                    return paramType.IsGenericType && 
+                           paramType.GetGenericTypeDefinition() == typeof(Input<>);
+                });
+
+            if (getMethod != null)
+            {
+                var genericGetMethod = getMethod.MakeGenericMethod(targetType);
+                return genericGetMethod.Invoke(context, new object[] { inputWrapper });
+            }
+            
+            // Fallback: try to get value from Expression property directly
+            var expressionProperty = inputWrapper.GetType().GetProperty("Expression");
+            if (expressionProperty != null)
+            {
+                var expression = expressionProperty.GetValue(inputWrapper);
+                if (expression != null)
+                {
+                    var valueProperty = expression.GetType().GetProperty("Value");
+                    if (valueProperty != null)
+                    {
+                        var value = valueProperty.GetValue(expression);
+                        return value?.ConvertTo(targetType);
+                    }
+                }
+            }
+            
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 }
