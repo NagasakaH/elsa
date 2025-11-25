@@ -6,8 +6,8 @@ using Elsa.ServiceBus.MassTransit.Options;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Helpers;
-using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 using Humanizer;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
@@ -18,31 +18,31 @@ namespace Elsa.ServiceBus.MassTransit.Services;
 /// Provides activities to the system from the configured MassTransit message types.
 /// </summary>
 [UsedImplicitly]
-public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, IOptions<MassTransitActivityOptions> options, IActivityDescriber activityDescriber) : IActivityProvider
+public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, IOptions<MassTransitActivityOptions> options) : IActivityProvider
 {
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
+    public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
         var messageTypes = options.Value.MessageTypes;
-        var descriptors = await CreateDescriptorsAsync(messageTypes, cancellationToken);
-        return descriptors.ToList();
+        var descriptors = CreateDescriptors(messageTypes);
+        return new ValueTask<IEnumerable<ActivityDescriptor>>(descriptors.ToList());
     }
 
-    private async Task<IEnumerable<ActivityDescriptor>> CreateDescriptorsAsync(IEnumerable<Type> messageTypes, CancellationToken cancellationToken = default)
+    private IEnumerable<ActivityDescriptor> CreateDescriptors(IEnumerable<Type> messageTypes)
     {
         var descriptors = new List<ActivityDescriptor>();
         foreach (var messageType in messageTypes)
         {
-            descriptors.Add(await CreateMessageReceivedDescriptor(messageType, cancellationToken));
+            descriptors.Add(CreateMessageReceivedDescriptor(messageType));
             
             if(messageType.IsClass)
-                descriptors.Add(await CreatePublishMessageDescriptor(messageType, cancellationToken));
+                descriptors.Add(CreatePublishMessageDescriptor(messageType));
         }
         
         return descriptors;
     }
 
-    private async Task<ActivityDescriptor> CreateMessageReceivedDescriptor(Type messageType, CancellationToken cancellationToken = default)
+    private ActivityDescriptor CreateMessageReceivedDescriptor(Type messageType)
     {
         var activityAttr = messageType.GetCustomAttribute<ActivityAttribute>();
         var typeName = activityAttr?.Type ?? messageType.Name;
@@ -54,10 +54,8 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
         var descriptionAttr = messageType.GetCustomAttribute<DescriptionAttribute>();
         var description = descriptionAttr?.Description ?? activityAttr?.Description;
         
-        var outputDescriptor = await activityDescriber.DescribeOutputProperty<MessageReceived, object>(x => x.Result!, cancellationToken);
-        var openOutputType = typeof(Output<>);
-        var outputType = openOutputType.MakeGenericType(messageType);
-        outputDescriptor.Type = outputType;
+        // Create output descriptors for each property of the message type
+        var outputDescriptors = CreateOutputDescriptorsFromType(messageType);
 
         return new()
         {
@@ -69,10 +67,7 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
             Category = category,
             Kind = ActivityKind.Trigger,
             IsBrowsable = true,
-            Outputs =
-            {
-                outputDescriptor
-            },
+            Outputs = outputDescriptors,
             Constructor = context =>
             {
                 var activity = activityFactory.Create<MessageReceived>(context);
@@ -83,7 +78,7 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
         };
     }
 
-    private async Task<ActivityDescriptor> CreatePublishMessageDescriptor(Type messageType, CancellationToken cancellationToken = default)
+    private ActivityDescriptor CreatePublishMessageDescriptor(Type messageType)
     {
         var activityAttr = messageType.GetCustomAttribute<ActivityAttribute>();
         var typeName = activityAttr?.Type ?? messageType.Name;
@@ -96,10 +91,8 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
         var descriptionAttr = messageType.GetCustomAttribute<DescriptionAttribute>();
         var description = descriptionAttr?.Description ?? activityAttr?.Description;
 
-        var messageInputDescriptor = await activityDescriber.DescribeInputPropertyAsync<PublishMessage, object>(x => x.Message, cancellationToken: cancellationToken);
-        var openInputType = typeof(Input<>);
-        var inputType = openInputType.MakeGenericType(messageType);
-        messageInputDescriptor.Type = inputType;
+        // Create input descriptors for each property of the message type
+        var inputDescriptors = CreateInputDescriptorsFromType(messageType);
 
         return new()
         {
@@ -111,10 +104,7 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
             Category = category,
             Kind = ActivityKind.Action,
             IsBrowsable = true,
-            Inputs =
-            {
-                messageInputDescriptor
-            },
+            Inputs = inputDescriptors,
             Constructor = context =>
             {
                 var activity = activityFactory.Create<PublishMessage>(context);
@@ -123,5 +113,115 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
                 return activity;
             }
         };
+    }
+
+    /// <summary>
+    /// Creates input descriptors from the properties of a message type.
+    /// </summary>
+    private List<InputDescriptor> CreateInputDescriptorsFromType(Type messageType)
+    {
+        var inputDescriptors = new List<InputDescriptor>();
+        var properties = messageType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.CanRead && p.CanWrite);
+
+        foreach (var property in properties)
+        {
+            var propertyDisplayName = property.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName 
+                ?? property.Name.Humanize(LetterCasing.Title);
+            var propertyDescription = property.GetCustomAttribute<DescriptionAttribute>()?.Description;
+            
+            var uiHint = GetUIHintForType(property.PropertyType);
+
+            var inputDescriptor = new InputDescriptor
+            {
+                Name = property.Name,
+                DisplayName = propertyDisplayName,
+                Description = propertyDescription,
+                Type = property.PropertyType,
+                IsWrapped = true,
+                IsSynthetic = true,
+                UIHint = uiHint,
+                ValueGetter = activity => activity.SyntheticProperties.GetValueOrDefault(property.Name),
+                ValueSetter = (activity, value) => activity.SyntheticProperties[property.Name] = value!
+            };
+
+            inputDescriptors.Add(inputDescriptor);
+        }
+
+        return inputDescriptors;
+    }
+
+    /// <summary>
+    /// Creates output descriptors from the properties of a message type.
+    /// </summary>
+    private List<OutputDescriptor> CreateOutputDescriptorsFromType(Type messageType)
+    {
+        var outputDescriptors = new List<OutputDescriptor>();
+        var properties = messageType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.CanRead);
+
+        foreach (var property in properties)
+        {
+            var propertyDisplayName = property.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName 
+                ?? property.Name.Humanize(LetterCasing.Title);
+            var propertyDescription = property.GetCustomAttribute<DescriptionAttribute>()?.Description;
+            
+            var openOutputType = typeof(Output<>);
+            var outputType = openOutputType.MakeGenericType(property.PropertyType);
+
+            var outputDescriptor = new OutputDescriptor
+            {
+                Name = property.Name,
+                DisplayName = propertyDisplayName,
+                Description = propertyDescription,
+                Type = outputType,
+                IsSynthetic = true,
+                ValueGetter = activity => activity.SyntheticProperties.GetValueOrDefault(property.Name),
+                ValueSetter = (activity, value) => activity.SyntheticProperties[property.Name] = value!
+            };
+
+            outputDescriptors.Add(outputDescriptor);
+        }
+
+        return outputDescriptors;
+    }
+
+    /// <summary>
+    /// Gets the appropriate UI hint for a given property type.
+    /// </summary>
+    private static string GetUIHintForType(Type propertyType)
+    {
+        if (propertyType == typeof(bool))
+            return InputUIHints.Checkbox;
+        
+        if (propertyType == typeof(string))
+            return InputUIHints.SingleLine;
+        
+        if (propertyType.IsEnum)
+            return InputUIHints.DropDown;
+        
+        if (IsNumericType(propertyType))
+            return InputUIHints.SingleLine;
+        
+        if (propertyType == typeof(DateTime) || propertyType == typeof(DateTimeOffset))
+            return InputUIHints.SingleLine;
+        
+        // For complex types, use multi-line (JSON)
+        return InputUIHints.MultiLine;
+    }
+
+    private static bool IsNumericType(Type type)
+    {
+        var underlyingType = Nullable.GetUnderlyingType(type) ?? type;
+        return underlyingType == typeof(int) ||
+               underlyingType == typeof(long) ||
+               underlyingType == typeof(short) ||
+               underlyingType == typeof(byte) ||
+               underlyingType == typeof(decimal) ||
+               underlyingType == typeof(double) ||
+               underlyingType == typeof(float) ||
+               underlyingType == typeof(uint) ||
+               underlyingType == typeof(ulong) ||
+               underlyingType == typeof(ushort);
     }
 }
