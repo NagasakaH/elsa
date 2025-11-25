@@ -4,6 +4,7 @@ using Elsa.Studio.Core.BlazorWasm.Extensions;
 using Elsa.Studio.Dashboard.Extensions;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Login.BlazorWasm.Extensions;
+using Elsa.Studio.Login.Extensions;
 using Elsa.Studio.Login.HttpMessageHandlers;
 using Elsa.Studio.Options;
 using Elsa.Studio.Shell;
@@ -31,6 +32,7 @@ builder.Services.AddRemoteBackend(new()
     ConfigureHttpClientBuilder = options => options.AuthenticationHandler = typeof(AuthenticatingApiHttpMessageHandler)
 });
 builder.Services.AddLoginModule();
+builder.Services.UseElsaIdentity();
 builder.Services.AddDashboardModule();
 builder.Services.AddWorkflowsModule();
 

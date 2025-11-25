@@ -170,6 +170,10 @@ class Program
         var services = builder.Services;
         var configuration = builder.Configuration;
 
+        // PostgreSQL接続文字列
+        var postgresConnectionString = configuration.GetConnectionString("PostgreSQL") 
+            ?? "Host=localhost;Port=5432;Database=elsa_workflows;Username=elsa_user;Password=elsa_password";
+
         // DIコンテナにElsaのサービスを登録
         services
             .AddElsa(elsa => elsa
@@ -179,8 +183,8 @@ class Program
                     identity.UseAdminUserProvider();
                 })
                 .UseDefaultAuthentication()
-                .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite())) // TODO: SQLServer or PostgreSQLに変更する
-                .UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UseSqlite())) // TODO: SQLServer or PostgreSQLに変更する
+                .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(postgresConnectionString)))
+                .UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(postgresConnectionString)))
                 .UseScheduling()
                 .UseJavaScript()
                 .UseLiquid()
