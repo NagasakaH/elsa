@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Elsa.Common;
 using Elsa.ServiceBus.MassTransit.Messages;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
@@ -11,7 +13,7 @@ namespace Elsa.ServiceBus.MassTransit.Consumers;
 /// A consumer of various dispatch message types to asynchronously execute workflows.
 /// </summary>
 [UsedImplicitly]
-public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflowDefinitionService, IWorkflowRuntime workflowRuntime) :
+public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflowDefinitionService, IWorkflowRuntime workflowRuntime, IJsonSerializer jsonSerializer) :
     IConsumer<DispatchWorkflowDefinition>,
     IConsumer<DispatchWorkflowInstance>
 {
@@ -55,13 +57,18 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
         if (workflowGraph == null)
             throw new Exception($"Workflow definition version with ID '{definitionVersionId}' not found");
 
+        // Deserialize input from SerializedInput
+        var input = !string.IsNullOrEmpty(message.SerializedInput) 
+            ? jsonSerializer.Deserialize<IDictionary<string, object>>(message.SerializedInput) 
+            : null;
+
         var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
         var createWorkflowInstanceRequest = new CreateAndRunWorkflowInstanceRequest
         {
             WorkflowDefinitionHandle = workflowGraph.Workflow.DefinitionHandle,
             Properties = message.Properties,
             CorrelationId = message.CorrelationId,
-            Input = message.Input,
+            Input = input,
             ParentId = message.ParentWorkflowInstanceId,
             TriggerActivityId = message.TriggerActivityId
         };
@@ -72,10 +79,15 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
     {
         if (string.IsNullOrWhiteSpace(message.InstanceId)) throw new ArgumentException("The instance ID is required when dispatching an existing workflow instance.");
 
+        // Deserialize input from SerializedInput
+        var input = !string.IsNullOrEmpty(message.SerializedInput) 
+            ? jsonSerializer.Deserialize<IDictionary<string, object>>(message.SerializedInput) 
+            : null;
+
         var request = new RunWorkflowInstanceRequest
         {
             TriggerActivityId = message.TriggerActivityId,
-            Input = message.Input,
+            Input = input,
             Properties = message.Properties
         };
 

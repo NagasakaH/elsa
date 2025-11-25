@@ -39,7 +39,6 @@ public class RabbitMqServiceBusFeature : FeatureBase
     /// <summary>
     /// Configures the RabbitMQ bus.
     /// </summary>
-    /// <remarks>This method is being marked as obsolete in favor of the ConfigureTransportBus which will provide additional access to the <see cref="IBusRegistrationContext"/></remarks>
     [Obsolete("Use ConfigureTransportBus instead which provides a reference to IBusRegistrationContext.")]
     public Action<IRabbitMqBusFactoryConfigurator>? ConfigureServiceBus { get; set; }
 
@@ -51,7 +50,7 @@ public class RabbitMqServiceBusFeature : FeatureBase
     /// Use this action to configure advanced settings and features for the RabbitMQ bus, such as middleware 
     /// or additional endpoints. This action will run in addition to the Elsa required configuration.
     /// </remarks>
-    public Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator> ConfigureTransportBus { get; set; }
+    public Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator>? ConfigureTransportBus { get; set; }
 
     /// <inheritdoc />
     public override void Configure()
@@ -80,7 +79,9 @@ public class RabbitMqServiceBusFeature : FeatureBase
                         configurator.PrefetchCount = options.PrefetchCount.Value;
                     configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
 
+#pragma warning disable CS0618 // Type or member is obsolete
                     ConfigureServiceBus?.Invoke(configurator);
+#pragma warning restore CS0618 // Type or member is obsolete
                     ConfigureTransportBus?.Invoke(context, configurator);
 
                     foreach (var consumer in temporaryConsumers)

@@ -5,6 +5,7 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.ServiceBus.MassTransit.Services;
 using Elsa.Workflows;
+using Elsa.Workflows.Models;
 
 namespace Elsa.ServiceBus.MassTransit.Activities;
 
@@ -32,10 +33,9 @@ public class MessageReceived : Trigger<object>
     /// <inheritdoc />
     protected override ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        // If we did not receive external input, it means we are just now encountering this activity, and we need to block execution by creating a bookmark.
+        // If we did not receive external input, create a bookmark and wait.
         if (!TryGetMessage(context, out var message))
         {
-            // Create bookmarks for when we receive the expected HTTP request.
             context.CreateBookmark(GetBookmarkPayload(context.ExpressionExecutionContext), ResumeAsync, includeActivityInstanceId: false);
             return default;
         }
@@ -45,7 +45,7 @@ public class MessageReceived : Trigger<object>
 
     private ValueTask ResumeAsync(ActivityExecutionContext context)
     {
-        if(!TryGetMessage(context, out var message))
+        if (!TryGetMessage(context, out var message))
             throw new InvalidOperationException("Message was not received.");
         return ExecuteInternalAsync(context, message);
     }
@@ -55,18 +55,17 @@ public class MessageReceived : Trigger<object>
         // Provide the received message as output (for backward compatibility).
         context.Set(Result, message);
 
-        // Set each property of the message as an individual synthetic output.
+        // Set each property of the message as an individual output.
         SetPropertyOutputs(context, message);
 
         // Remove the input to prevent it from being passed to the next activity.
         context.WorkflowInput.Remove(InputKey);
 
-        // Complete.
         return context.CompleteActivityAsync();
     }
 
     /// <summary>
-    /// Sets each property of the message as an individual output in the activity's synthetic properties.
+    /// Sets each property of the message as an individual output.
     /// </summary>
     private void SetPropertyOutputs(ActivityExecutionContext context, object message)
     {
@@ -76,8 +75,21 @@ public class MessageReceived : Trigger<object>
         foreach (var property in properties)
         {
             var value = property.GetValue(message);
-            // Store in SyntheticProperties so the output descriptor can retrieve it
-            SyntheticProperties[property.Name] = value!;
+            
+            // Check if an Output wrapper already exists in SyntheticProperties
+            if (SyntheticProperties.TryGetValue(property.Name, out var existingOutput) && existingOutput != null)
+            {
+                var outputObj = existingOutput as Output;
+                if (outputObj != null)
+                {
+                    context.Set(outputObj, value);
+                }
+            }
+            else
+            {
+                // Store the raw value in SyntheticProperties for later retrieval
+                SyntheticProperties[property.Name] = value!;
+            }
         }
     }
 
@@ -95,7 +107,6 @@ public class MessageReceived : Trigger<object>
 
     private object GetBookmarkPayload(ExpressionExecutionContext context)
     {
-        // Generate bookmark data for message type.
         return new MessageReceivedBookmarkPayload(MessageType);
     }
 }
