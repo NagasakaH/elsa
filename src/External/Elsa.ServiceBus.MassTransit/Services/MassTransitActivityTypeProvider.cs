@@ -122,8 +122,7 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
     {
         var inputDescriptors = new List<InputDescriptor>();
         var properties = messageType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(p => p.CanRead && p.CanWrite)
-            .Where(p => !p.PropertyType.IsEnum); // Skip enum properties for now as they cause serialization issues
+            .Where(p => p.CanRead && p.CanWrite);
 
         foreach (var property in properties)
         {
@@ -131,7 +130,10 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
                 ?? property.Name.Humanize(LetterCasing.Title);
             var propertyDescription = property.GetCustomAttribute<DescriptionAttribute>()?.Description;
             
-            var uiHint = GetUIHintForType(property.PropertyType);
+            var (uiHint, uiSpecifications) = GetUIHintForType(property.PropertyType);
+            
+            // For enum types, we use string as the underlying type to avoid serialization issues
+            var inputType = property.PropertyType.IsEnum ? typeof(string) : property.PropertyType;
 
             // Type should be the naked type (e.g., string, not Input<string>)
             // IsWrapped=true tells Elsa that the value stored in SyntheticProperties is already wrapped in Input<T>
@@ -140,10 +142,11 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
                 Name = property.Name,
                 DisplayName = propertyDisplayName,
                 Description = propertyDescription,
-                Type = property.PropertyType,  // Use naked type, not Input<T>
+                Type = inputType,
                 IsWrapped = true,
                 IsSynthetic = true,
                 UIHint = uiHint,
+                UISpecifications = uiSpecifications,
                 ValueGetter = activity => activity.SyntheticProperties.GetValueOrDefault(property.Name),
                 ValueSetter = (activity, value) => activity.SyntheticProperties[property.Name] = value!
             };
@@ -161,8 +164,7 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
     {
         var outputDescriptors = new List<OutputDescriptor>();
         var properties = messageType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(p => p.CanRead)
-            .Where(p => !p.PropertyType.IsEnum); // Skip enum properties for now
+            .Where(p => p.CanRead);
 
         foreach (var property in properties)
         {
@@ -170,13 +172,16 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
                 ?? property.Name.Humanize(LetterCasing.Title);
             var propertyDescription = property.GetCustomAttribute<DescriptionAttribute>()?.Description;
 
+            // For enum types, we use string as the underlying type
+            var outputType = property.PropertyType.IsEnum ? typeof(string) : property.PropertyType;
+
             // Type should be the naked type (e.g., string, not Output<string>)
             var outputDescriptor = new OutputDescriptor
             {
                 Name = property.Name,
                 DisplayName = propertyDisplayName,
                 Description = propertyDescription,
-                Type = property.PropertyType,  // Use naked type, not Output<T>
+                Type = outputType,
                 IsSynthetic = true,
                 ValueGetter = activity => activity.SyntheticProperties.GetValueOrDefault(property.Name),
                 ValueSetter = (activity, value) => activity.SyntheticProperties[property.Name] = value!
@@ -189,24 +194,43 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
     }
 
     /// <summary>
-    /// Gets the appropriate UI hint for a given property type.
+    /// Gets the appropriate UI hint and specifications for a given property type.
     /// </summary>
-    private static string GetUIHintForType(Type propertyType)
+    private static (string UIHint, IDictionary<string, object>? UISpecifications) GetUIHintForType(Type propertyType)
     {
         if (propertyType == typeof(bool))
-            return InputUIHints.Checkbox;
+            return (InputUIHints.Checkbox, null);
         
         if (propertyType == typeof(string))
-            return InputUIHints.SingleLine;
+            return (InputUIHints.SingleLine, null);
         
         if (IsNumericType(propertyType))
-            return InputUIHints.SingleLine;
+            return (InputUIHints.SingleLine, null);
         
         if (propertyType == typeof(DateTime) || propertyType == typeof(DateTimeOffset))
-            return InputUIHints.SingleLine;
+            return (InputUIHints.SingleLine, null);
+        
+        // For enum types, use dropdown with select list items
+        if (propertyType.IsEnum)
+        {
+            var enumNames = Enum.GetNames(propertyType);
+            var selectListItems = enumNames.Select(name => new { Text = name, Value = name }).ToArray();
+            
+            var dropdownProps = new Dictionary<string, object>
+            {
+                ["selectList"] = new { items = selectListItems }
+            };
+            
+            var uiSpecifications = new Dictionary<string, object>
+            {
+                [InputUIHints.DropDown] = dropdownProps
+            };
+            
+            return (InputUIHints.DropDown, uiSpecifications);
+        }
         
         // For complex types, use multi-line (JSON)
-        return InputUIHints.MultiLine;
+        return (InputUIHints.MultiLine, null);
     }
 
     private static bool IsNumericType(Type type)
