@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Description>
+            Provides integration of RabbitMQ with MassTransit's integration of Elsa.
+        </Description>
+        <PackageTags>elsa extension module service-bus masstransit rabbitmq</PackageTags>
+    </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="MassTransit.RabbitMQ" Version="8.4.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Elsa.ServiceBus.MassTransit\Elsa.ServiceBus.MassTransit.csproj" />
+	</ItemGroup>
+
+</Project>

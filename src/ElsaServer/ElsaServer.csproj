@@ -3,19 +3,21 @@
   <ItemGroup>
     <ProjectReference Include="..\ElsaStudio\ElsaStudio.csproj" />
     <ProjectReference Include="..\Common\RabbitMQService\RabbitMQService.csproj" />
+    <ProjectReference Include="..\External\Elsa.ServiceBus.MassTransit\Elsa.ServiceBus.MassTransit.csproj" />
+    <ProjectReference Include="..\External\Elsa.ServiceBus.MassTransit.RabbitMq\Elsa.ServiceBus.MassTransit.RabbitMq.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Elsa" Version="3.4.2" />
-    <PackageReference Include="Elsa.CSharp" Version="3.4.2" />
-    <PackageReference Include="Elsa.EntityFrameworkCore" Version="3.4.2" />
-    <PackageReference Include="Elsa.EntityFrameworkCore.Sqlite" Version="3.4.2" />
-    <PackageReference Include="Elsa.Identity" Version="3.4.2" />
-    <PackageReference Include="Elsa.JavaScript" Version="3.4.2" />
-    <PackageReference Include="Elsa.Liquid" Version="3.4.2" />
-    <PackageReference Include="Elsa.MassTransit.RabbitMq" Version="3.4.2" />
-    <PackageReference Include="Elsa.Scheduling" Version="3.4.2" />
-    <PackageReference Include="Elsa.Workflows.Api" Version="3.4.2" />
+    <PackageReference Include="Elsa" Version="3.5.2" />
+    <PackageReference Include="Elsa.CSharp" Version="3.5.2" />
+    <PackageReference Include="Elsa.EntityFrameworkCore" Version="3.5.2" />
+    <PackageReference Include="Elsa.EntityFrameworkCore.Sqlite" Version="3.5.2" />
+    <PackageReference Include="Elsa.Http" Version="3.5.2" />
+    <PackageReference Include="Elsa.Identity" Version="3.5.2" />
+    <PackageReference Include="Elsa.JavaScript" Version="3.5.2" />
+    <PackageReference Include="Elsa.Liquid" Version="3.5.2" />
+    <PackageReference Include="Elsa.Scheduling" Version="3.5.2" />
+    <PackageReference Include="Elsa.Workflows.Api" Version="3.5.2" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="3.2.1" /> <!--バージョンを上げるとビルドに失敗するので注意-->
   </ItemGroup>
 
