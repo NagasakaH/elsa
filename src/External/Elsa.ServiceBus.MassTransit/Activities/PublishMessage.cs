@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
@@ -27,20 +28,36 @@ public class PublishMessage : CodeActivity
     /// </summary>
     public Type MessageType { get; set; } = null!;
 
-    /// <summary>
-    /// The message to send. Must be a concrete implementation of the configured <see cref="MessageType"/>.
-    /// </summary>
-    [Input(
-        Description = "The message to send. Must be a concrete implementation of the configured message type.",
-        UIHint = InputUIHints.MultiLine
-    )]
-    public Input<object> Message { get; set; } = null!;
-
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var bus = context.GetRequiredService<IBus>();
-        var message = Message.Get(context).ConvertTo(MessageType)!;
+        var message = BuildMessageFromInputs(context);
         await bus.Publish(message, context.CancellationToken);
+    }
+
+    /// <summary>
+    /// Builds a message instance from the dynamic input properties.
+    /// </summary>
+    private object BuildMessageFromInputs(ActivityExecutionContext context)
+    {
+        // Create an instance of the message type
+        var message = Activator.CreateInstance(MessageType)!;
+        
+        var properties = MessageType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.CanWrite);
+
+        foreach (var property in properties)
+        {
+            // Try to get the input value for this property from SyntheticProperties
+            if (SyntheticProperties.TryGetValue(property.Name, out var inputValue) && inputValue != null)
+            {
+                // Convert the value to the property type if necessary
+                var convertedValue = inputValue.ConvertTo(property.PropertyType);
+                property.SetValue(message, convertedValue);
+            }
+        }
+
+        return message;
     }
 }

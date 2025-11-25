@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
@@ -51,14 +52,33 @@ public class MessageReceived : Trigger<object>
 
     private ValueTask ExecuteInternalAsync(ActivityExecutionContext context, object message)
     {
-        // Provide the received message as output.
+        // Provide the received message as output (for backward compatibility).
         context.Set(Result, message);
+
+        // Set each property of the message as an individual synthetic output.
+        SetPropertyOutputs(context, message);
 
         // Remove the input to prevent it from being passed to the next activity.
         context.WorkflowInput.Remove(InputKey);
 
         // Complete.
         return context.CompleteActivityAsync();
+    }
+
+    /// <summary>
+    /// Sets each property of the message as an individual output in the activity's synthetic properties.
+    /// </summary>
+    private void SetPropertyOutputs(ActivityExecutionContext context, object message)
+    {
+        var properties = MessageType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.CanRead);
+
+        foreach (var property in properties)
+        {
+            var value = property.GetValue(message);
+            // Store in SyntheticProperties so the output descriptor can retrieve it
+            SyntheticProperties[property.Name] = value!;
+        }
     }
 
     private bool TryGetMessage(ActivityExecutionContext context, out object message)

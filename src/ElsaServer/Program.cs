@@ -10,6 +10,7 @@ using RabbitMQ.Client;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Options;
+using ElsaServer.Messages;
 
 public class ActivityResumerService : BackgroundService
 {
@@ -191,11 +192,17 @@ class Program
                     massTransit.UseRabbitMq(
                         "amqp://guest:guest@localhost:5672" // TODO: 暫定ハードコーティング、appsettings.jsonから取得するように変更する
                     );
+                    // サンプルメッセージタイプを登録
+                    massTransit.AddMessageType<OrderCreated>();
+                    massTransit.AddMessageType<OrderApproved>();
+                    massTransit.AddMessageType<OrderRejected>();
+                    massTransit.AddMessageType<UserRegistered>();
+                    massTransit.AddMessageType<SendNotification>();
                 })
-                .AddActivity<PublishMessage>() // PublishMessageアクティビティを追加
-                .AddActivity<WaitMessage>() // WaitMessageアクティビティを追加
-                .AddActivitiesFrom<Program>()
-                .AddWorkflowsFrom<Program>()
+                // .AddActivity<PublishMessage>() // PublishMessageアクティビティを追加
+                // .AddActivity<WaitMessage>() // WaitMessageアクティビティを追加
+                // .AddActivitiesFrom<Program>()
+                // .AddWorkflowsFrom<Program>()
             );
 
         // DIコンテナにRabbitMQの接続設定を登録
@@ -236,9 +243,8 @@ class Program
         {
             app.UseExceptionHandler("/Error");
             app.UseHsts();
+            app.UseHttpsRedirection();
         }
-
-        app.UseHttpsRedirection();
         app.UseBlazorFrameworkFiles();
         app.UseRouting();
         app.UseCors();
