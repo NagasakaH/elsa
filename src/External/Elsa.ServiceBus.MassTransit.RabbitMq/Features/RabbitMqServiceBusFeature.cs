@@ -8,6 +8,7 @@ using Elsa.Hosting.Management.Features;
 using Elsa.ServiceBus.MassTransit.Extensions;
 using Elsa.ServiceBus.MassTransit.Features;
 using Elsa.ServiceBus.MassTransit.Options;
+using Elsa.ServiceBus.MassTransit.RabbitMq.Options;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -30,6 +31,12 @@ public class RabbitMqServiceBusFeature : FeatureBase
     /// A RabbitMQ connection string.
     /// </summary>
     public string? ConnectionString { get; set; }
+
+    /// <summary>
+    /// Connection options for RabbitMQ including virtual host support.
+    /// When set, this takes precedence over <see cref="ConnectionString"/>.
+    /// </summary>
+    public RabbitMqConnectionOptions? ConnectionOptions { get; set; }
 
     /// <summary>
     /// Configures the RabbitMQ transport options.
@@ -72,8 +79,21 @@ public class RabbitMqServiceBusFeature : FeatureBase
                     var options = context.GetRequiredService<IOptions<MassTransitOptions>>().Value;
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
 
-                    if (!string.IsNullOrEmpty(ConnectionString))
+                    // Configure RabbitMQ host - ConnectionOptions takes precedence over ConnectionString
+                    if (ConnectionOptions != null)
+                    {
+                        configurator.Host(ConnectionOptions.Host, ConnectionOptions.Port, ConnectionOptions.VirtualHost, h =>
+                        {
+                            h.Username(ConnectionOptions.Username);
+                            h.Password(ConnectionOptions.Password);
+                            if (ConnectionOptions.UseSsl)
+                                h.UseSsl(s => { });
+                        });
+                    }
+                    else if (!string.IsNullOrEmpty(ConnectionString))
+                    {
                         configurator.Host(ConnectionString);
+                    }
 
                     if (options.PrefetchCount is not null)
                         configurator.PrefetchCount = options.PrefetchCount.Value;

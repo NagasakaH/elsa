@@ -4,6 +4,7 @@ using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.ServiceBus.MassTransit.Builders;
 using Elsa.ServiceBus.MassTransit.Consumers;
 using Elsa.ServiceBus.MassTransit.Contracts;
 using Elsa.ServiceBus.MassTransit.Extensions;
@@ -62,16 +63,22 @@ public class MassTransitFeature : FeatureBase
     public override void Apply()
     {
         var messageTypes = this.GetMessages();
+        var rpcMessageTypes = this.GetRpcMessages();
 
         Services.AddSingleton(ChannelQueueFormatterFactory);
         Services.Configure<MassTransitWorkflowDispatcherOptions>(x => { });
         Services.AddActivityProvider<MassTransitActivityTypeProvider>();
         _runInMemory = BusConfigurator is null;
         var busConfigurator = BusConfigurator ??= ConfigureInMemoryTransport;
-        AddMassTransit(busConfigurator);
+        AddMassTransit(busConfigurator, rpcMessageTypes);
 
-        // Add collected message types to options.
-        Services.Configure<MassTransitActivityOptions>(options => options.MessageTypes = new HashSet<Type>(messageTypes));
+        // Add collected message types and RPC message types to options.
+        Services.Configure<MassTransitActivityOptions>(options =>
+        {
+            options.MessageTypes = new HashSet<Type>(messageTypes);
+            options.RpcMessageTypes = new HashSet<RpcMessageTypeDefinition>(rpcMessageTypes);
+            options.CustomRpcActivityDefinitions = this.GetCustomRpcActivityDefinitions().ToList();
+        });
 
         // Add collected message types as available variable types.
         Services.Configure<ManagementOptions>(options =>
@@ -85,6 +92,24 @@ public class MassTransitFeature : FeatureBase
                 var description = descriptionAttr?.Description ?? activityAttr?.Description;
                 options.VariableDescriptors.Add(new(messageType, category, description));
             }
+
+            // Add RPC request and response types as variable types
+            foreach (var rpcType in rpcMessageTypes)
+            {
+                var requestAttr = rpcType.RequestType.GetCustomAttribute<ActivityAttribute>();
+                var requestCategoryAttr = rpcType.RequestType.GetCustomAttribute<CategoryAttribute>();
+                var requestCategory = requestCategoryAttr?.Category ?? requestAttr?.Category ?? "MassTransit RPC";
+                var requestDescAttr = rpcType.RequestType.GetCustomAttribute<DescriptionAttribute>();
+                var requestDescription = requestDescAttr?.Description ?? requestAttr?.Description;
+                options.VariableDescriptors.Add(new(rpcType.RequestType, requestCategory, requestDescription));
+
+                var responseAttr = rpcType.ResponseType.GetCustomAttribute<ActivityAttribute>();
+                var responseCategoryAttr = rpcType.ResponseType.GetCustomAttribute<CategoryAttribute>();
+                var responseCategory = responseCategoryAttr?.Category ?? responseAttr?.Category ?? "MassTransit RPC";
+                var responseDescAttr = rpcType.ResponseType.GetCustomAttribute<DescriptionAttribute>();
+                var responseDescription = responseDescAttr?.Description ?? responseAttr?.Description;
+                options.VariableDescriptors.Add(new(rpcType.ResponseType, responseCategory, responseDescription));
+            }
         });
     }
 
@@ -92,7 +117,8 @@ public class MassTransitFeature : FeatureBase
     /// Adds MassTransit to the service container and registers all collected assemblies for discovery of consumers.
     /// </summary>
     /// <param name="busConfigurator">The bus configurator used to configure the MassTransit Bus.</param>
-    private void AddMassTransit(Action<IBusRegistrationConfigurator> busConfigurator)
+    /// <param name="rpcMessageTypes">The RPC message type definitions for registering request clients.</param>
+    private void AddMassTransit(Action<IBusRegistrationConfigurator> busConfigurator, IEnumerable<RpcMessageTypeDefinition> rpcMessageTypes)
     {
         // For each message type, create a concrete WorkflowMessageConsumer<T>.
         var workflowMessageConsumerType = typeof(WorkflowMessageConsumer<>);
@@ -111,6 +137,55 @@ public class MassTransitFeature : FeatureBase
 
             foreach (var definition in consumerTypeDefinitions)
                 bus.AddConsumer(definition.ConsumerType, definition.ConsumerDefinitionType);
+
+            // Register request clients for RPC message types
+            foreach (var rpcType in rpcMessageTypes)
+            {
+                var timeout = rpcType.Timeout ?? TimeSpan.FromSeconds(30);
+                var requestTimeout = RequestTimeout.After(s: (int)timeout.TotalSeconds);
+                
+                if (rpcType.DestinationAddress != null)
+                {
+                    // Use overload with destination address for cross-process RPC
+                    // IRegistrationConfigurator.AddRequestClient<T>(Uri, RequestTimeout)
+                    var addRequestClientMethod = typeof(IRegistrationConfigurator)
+                        .GetMethods()
+                        .Where(m => m.Name == "AddRequestClient" && m.IsGenericMethod)
+                        .FirstOrDefault(m =>
+                        {
+                            var parameters = m.GetParameters();
+                            return parameters.Length == 2 &&
+                                   parameters[0].ParameterType == typeof(Uri) &&
+                                   parameters[1].ParameterType == typeof(RequestTimeout);
+                        });
+
+                    if (addRequestClientMethod != null)
+                    {
+                        var genericMethod = addRequestClientMethod.MakeGenericMethod(rpcType.RequestType);
+                        genericMethod.Invoke(bus, new object[] { rpcType.DestinationAddress, requestTimeout });
+                    }
+                }
+                else
+                {
+                    // Use default overload for in-process RPC or when destination is auto-discovered
+                    // IRegistrationConfigurator.AddRequestClient<T>(RequestTimeout)
+                    var addRequestClientMethod = typeof(IRegistrationConfigurator)
+                        .GetMethods()
+                        .Where(m => m.Name == "AddRequestClient" && m.IsGenericMethod)
+                        .FirstOrDefault(m =>
+                        {
+                            var parameters = m.GetParameters();
+                            return parameters.Length == 1 &&
+                                   parameters[0].ParameterType == typeof(RequestTimeout);
+                        });
+
+                    if (addRequestClientMethod != null)
+                    {
+                        var genericMethod = addRequestClientMethod.MakeGenericMethod(rpcType.RequestType);
+                        genericMethod.Invoke(bus, new object[] { requestTimeout });
+                    }
+                }
+            }
 
             busConfigurator(bus);
             _configureServiceBus(bus);
