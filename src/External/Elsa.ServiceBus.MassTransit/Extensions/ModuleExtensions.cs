@@ -16,6 +16,23 @@ public static class ModuleExtensions
     public static IModule UseMassTransit(this IModule module, Action<MassTransitFeature>? configure = null) => module.Use(configure);
 
     /// <summary>
+    /// Enable and configure MassTransit with additional bus configuration.
+    /// </summary>
+    /// <param name="module">The module to configure.</param>
+    /// <param name="configure">Action to configure the MassTransit feature.</param>
+    /// <param name="configureBus">Action to configure the MassTransit bus (add consumers, etc.).</param>
+    /// <returns>The module for chaining.</returns>
+    public static IModule UseMassTransit(this IModule module, Action<MassTransitFeature>? configure, Action<IBusRegistrationConfigurator>? configureBus)
+    {
+        module.Use(configure);
+        if (configureBus != null)
+        {
+            module.Configure<MassTransitFeature>(massTransit => massTransit.ConfigureServiceBus(configureBus));
+        }
+        return module;
+    }
+
+    /// <summary>
     /// Registers the specified consumer with MassTransit.
     /// </summary>
     public static IModule AddMassTransitConsumer<T>(this IModule module, string? name = null, bool isTemporary = false, bool ignoreConsumersDisabled = false) where T : IConsumer

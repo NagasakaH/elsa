@@ -5,6 +5,7 @@
     <ProjectReference Include="..\Common\RabbitMQService\RabbitMQService.csproj" />
     <ProjectReference Include="..\External\Elsa.ServiceBus.MassTransit\Elsa.ServiceBus.MassTransit.csproj" />
     <ProjectReference Include="..\External\Elsa.ServiceBus.MassTransit.RabbitMq\Elsa.ServiceBus.MassTransit.RabbitMq.csproj" />
+    <ProjectReference Include="..\RpcService\RpcService.csproj" />
   </ItemGroup>
 
   <ItemGroup>
