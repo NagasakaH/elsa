@@ -9,6 +9,7 @@ MassTransit経由でTaskIdとRunTaskIdを指定してワークフローを起動
 - ワークフロー/アクティビティ作成ルールと生成AIエージェントの整備。
 - サンプルワークフロー/システムテストの準備。
 - ElsaStudio UI改修は対象外。
+- 修正計画と進捗管理（plans/配下）および実装実行エージェントの整備。
 
 ## 用語
 - **TaskId**: ワークフローを一意に識別するID（1対1紐づけ）。
@@ -23,7 +24,11 @@ MassTransit経由でTaskIdとRunTaskIdを指定してワークフローを起動
 5. **ワークフロー設計資料**: 各ワークフローの設計資料を `docs/activities/<ワークフロー名>.workflow.md` に作成する。
 6. **ワークフロールール**: JSON作成ルールを `docs/workflows/rules.md` にまとめ、生成AI用エージェント `.github/agents/workflowdesign.agent.md` を用意する。
 7. **カスタムアクティビティ**: `Activities/` 配下DLLをロードして使用可能とし、作成ルールを `docs/activities/rules.md` にまとめ、生成AI用エージェント `.github/agents/activities.agent.md` を用意する。テンプレートプロジェクトの複製で作成し、テストを伴うこと。
-8. **システムテスト準備**: サンプルのワークフローJSONを登録し、MassTransit経由で起動・状態通知を受信するシステムテストを可能にする。
+8. **ワークフローJSON管理**: `workflow-<TaskId>.json` 形式でTaskIdと1対1に配置し、RunTaskIdは実行要求ごとに受領値を使用する。JSONスキーマ/ルールに従い必須フィールドと状態通知パスを組み込む。
+9. **生成AIエージェント**: ワークフロー生成用 `.github/agents/workflowdesign.agent.md`、アクティビティ生成用 `.github/agents/activities.agent.md`、実装実行用 `.github/agents/implementation.agent.md` を整備し、会話回数を抑えて一括実行できるようにする。
+10. **計画と進捗管理**: `plans/plan.md` に全体計画、`plans/progress.md` に進捗、`plans/note/*.md` に決定事項を記録する。
+11. **システムテスト準備**: サンプルのワークフローJSONを登録し、MassTransit経由で起動・状態通知を受信するシステムテストを可能にする。
+12. **実装順序遵守**: 実作業は「詳細設計書の作成 → 単体テストの作成 → 実装 → テスト」の順で実施する。
 
 ## 非機能要件
 - **パフォーマンス**: 起動時の一括読み込みが実用的時間で完了すること（JSON数が増えても直列読込で許容）。
@@ -42,3 +47,4 @@ MassTransit経由でTaskIdとRunTaskIdを指定してワークフローを起動
 - 実行中に状態がPublishされ、RunTaskId単位で確認できる。
 - ルール文書と生成AIエージェントが整備されている。
 - システムテスト用シナリオが用意され、実行可能な状態になっている。
+- 計画・進捗・ノートがplans配下で管理され、実装順序が遵守されている。
