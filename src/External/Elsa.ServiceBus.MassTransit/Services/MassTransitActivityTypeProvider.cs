@@ -392,6 +392,14 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
         // Create output descriptors from definition
         var outputDescriptors = CreateOutputDescriptorsFromDefinition(definition);
 
+        // Define outcome ports for workflow branching
+        var outcomePorts = new List<Port>
+        {
+            new Port { Name = "Done", DisplayName = "成功", Type = PortType.Flow, IsBrowsable = true },
+            new Port { Name = "Timeout", DisplayName = "タイムアウト", Type = PortType.Flow, IsBrowsable = true },
+            new Port { Name = "Error", DisplayName = "エラー", Type = PortType.Flow, IsBrowsable = true }
+        };
+
         return new()
         {
             Name = $"Custom{requestType.Name}",
@@ -404,10 +412,7 @@ public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, I
             IsBrowsable = true,
             Inputs = inputDescriptors,
             Outputs = outputDescriptors,
-            CustomProperties = new Dictionary<string, object>
-            {
-                ["Outcomes"] = new[] { "Done", "Timeout", "Error" }
-            },
+            Ports = outcomePorts,
             Constructor = context =>
             {
                 // Don't use activityFactory.Create to avoid JSON key lookup issues

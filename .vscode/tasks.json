@@ -14,6 +14,30 @@
             "problemMatcher": "$msCompile"
         },
         {
+            "label": "build:project",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${input:csprojPath}",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build:solution",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/NagasakaEventSystem.sln",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
             "label": "publish",
             "command": "dotnet",
             "type": "process",
@@ -36,6 +60,43 @@
                 "${workspaceFolder}/src/ElsaServer/ElsaServer.csproj"
             ],
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "test:project",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "test",
+                "${input:csprojPath}",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "test:solution",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "test",
+                "${workspaceFolder}/NagasakaEventSystem.sln",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "csprojPath",
+            "type": "pickString",
+            "description": "Select csproj to build/test",
+            "options": [
+                "${workspaceFolder}/src/ElsaServer/ElsaServer.csproj",
+                "${workspaceFolder}/src/RpcService/RpcService.csproj",
+                "${workspaceFolder}/src/Subscribe/Subscribe.csproj",
+                "${workspaceFolder}/src/Common/RabbitMQService/RabbitMQService.csproj"
+            ]
         }
     ]
 }
