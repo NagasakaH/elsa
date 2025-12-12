@@ -10,10 +10,19 @@ using RabbitMQ.Client;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Options;
-using ElsaServer.Messages;
 using NagasakaEventSystem.RpcService.Messages;
 using NagasakaEventSystem.RpcService.Extensions;
 using Elsa.ServiceBus.MassTransit.Extensions;
+using Elsa.Workflows.Notifications;
+using ElsaServer.Consumers;
+using ElsaServer.Messages;
+using ElsaServer.Options;
+using ElsaServer.Services;
+using ElsaServer.Hosted;
+using ElsaServer.Activities;
+using Elsa.ServiceBus.MassTransit.RabbitMq.Options;
+using MassTransit;
+using Elsa.Mediator.Contracts;
 
 class Program
 {
@@ -31,9 +40,15 @@ class Program
         var postgresConnectionString = configuration.GetConnectionString("PostgreSQL") 
             ?? "Host=localhost;Port=5432;Database=elsa_workflows;Username=elsa_user;Password=elsa_password";
 
+        services.Configure<WorkflowCatalogOptions>(configuration.GetSection("WorkflowCatalog"));
+        services.Configure<ActivityAssemblyOptions>(configuration.GetSection("Activities"));
+        services.Configure<WorkflowBusOptions>(configuration.GetSection("WorkflowMessaging"));
+        var massTransitSection = configuration.GetSection("MassTransit");
+
         // DIコンテナにElsaのサービスを登録
         services
             .AddElsa(elsa => elsa
+                .AddActivitiesFrom<PublishWorkflowStatus>()
                 .UseIdentity(identity =>
                 {
                     identity.TokenOptions = options => options.SigningKey = "large-signing-key-for-signing-JWT-tokens"; // TODO: 暫定ハードコーティング、appsettings.jsonから取得するように変更する
@@ -53,15 +68,21 @@ class Program
                     // RabbitMQの設定（VirtualHost対応）
                     massTransit.UseRabbitMq(options =>
                     {
-                        options.Host = "localhost";
-                        options.Port = 5672;
-                        options.VirtualHost = "/"; // Virtual Hostを指定可能
-                        options.Username = "guest";
-                        options.Password = "guest";
+                        options.ConnectionOptions = new RabbitMqConnectionOptions
+                        {
+                            Host = massTransitSection.GetValue<string>("Host") ?? "localhost",
+                            Port = (ushort)(massTransitSection.GetValue<int?>("Port") ?? 5672),
+                            VirtualHost = massTransitSection.GetValue<string>("VirtualHost") ?? "/",
+                            Username = massTransitSection.GetValue<string>("Username") ?? "guest",
+                            Password = massTransitSection.GetValue<string>("Password") ?? "guest"
+                        };
                     });
 
                     // テスト用シンプルメッセージタイプを登録
                     massTransit.AddMessageType<TestMessage>();
+                    massTransit.AddMessageType<StartWorkflowCommand>();
+                    massTransit.AddMessageType<WorkflowStatusEvent>();
+                    massTransit.AddConsumer<StartWorkflowConsumer, StartWorkflowConsumerDefinition>("workflow-start", false);
 
                     // RPC用メッセージタイプを登録（リクエスト/レスポンスペア）
                     // 宛先アドレスを指定（RpcServiceで実行されるConsumerのキュー名）
@@ -107,6 +128,19 @@ class Program
                     */
                 })
             );
+
+            services.AddSingleton<RunContextStore>();
+            services.AddSingleton<WorkflowCatalog>();
+            services.AddSingleton<WorkflowCatalogLoader>();
+            services.AddSingleton<ActivityAssemblyLoader>();
+            services.AddSingleton<IPayloadMapper, DefaultPayloadMapper>();
+            services.AddSingleton<IWorkflowLauncher, WorkflowLauncher>();
+            services.AddSingleton<WorkflowStatusPublisher>();
+            services.AddSingleton<IWorkflowStatusPublisher>(sp => sp.GetRequiredService<WorkflowStatusPublisher>());
+            services.AddSingleton<INotificationHandler<WorkflowStarted>>(sp => sp.GetRequiredService<WorkflowStatusPublisher>());
+            services.AddSingleton<INotificationHandler<WorkflowExecuted>>(sp => sp.GetRequiredService<WorkflowStatusPublisher>());
+            services.AddSingleton<INotificationHandler<WorkflowFinished>>(sp => sp.GetRequiredService<WorkflowStatusPublisher>());
+            services.AddHostedService<StartupInitializationHostedService>();
 
         // CORSの設定
         services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));

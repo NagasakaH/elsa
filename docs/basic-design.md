@@ -3,13 +3,16 @@
 ## システム構成概要
 - ElsaServer: 起動時に`docs/workflows/`配下の`workflow-<TaskId>.json`を読み込み、TaskId→ワークフロー定義をオンメモリ保持。MassTransitメッセージで起動要求を受け付け、実行・状態通知を行う。
 - MassTransit: 起動メッセージの受信および状態通知（Publish）に使用。
-- Activities DLL: `Activities/`配下DLLをロードし、カスタムアクティビティを使用可能にする。
+- Activities DLL: `Activities/`配下DLLをロードし、カスタムアクティビティを使用可能にする（テンプレート複製で生成）。
+- 生成AIエージェント: `.github/agents/workflowdesign.agent.md`（ワークフロー）、`.github/agents/activities.agent.md`（アクティビティ）、`.github/agents/implementation.agent.md`（実装実行）を用意し、計画に沿ってバッチ的に進める。
+- 計画管理: `plans/plan.md`, `plans/progress.md`, `plans/note/*.md`でタスク・進捗・決定事項を記録。
 
 ## データ構造（想定）
 - `WorkflowCatalog`: `TaskId`→ワークフロー定義(JSON)のマップ。起動時読み込み。
 - `RunContextStore`: `RunTaskId`→実行インスタンス（または実行ハンドル）のオンメモリマップ。
 - `WorkflowMessage`（受信）: `TaskId`, `RunTaskId`, `Payload`（任意）。
 - `WorkflowStatusMessage`（Publish）: `RunTaskId`, `Status`(`Running|Suspended|Finished|Error`), `TaskId`, `Detail`（任意）。
+- `Activities`フォルダ: テンプレートを複製したカスタムアクティビティDLL配置場所。
 
 ## 起動時処理フロー
 1. `docs/workflows/`を走査し`workflow-<TaskId>.json`を読み込む。
@@ -31,11 +34,12 @@
 - 命名: `workflow-<TaskId>.json`
 - 設計資料: `docs/activities/<ワークフロー名>.workflow.md`
 - ルール: `docs/workflows/rules.md`
+- 生成: `.github/agents/workflowdesign.agent.md`でルール遵守のJSON・設計資料・テスト観点を出力。
 
 ## アクティビティロード
 - パス: `Activities/`配下のDLLを起動時にロード。
 - ルール: `docs/activities/rules.md`
-- テンプレートプロジェクトを複製して作成し、ビルドでDLL出力。
+- テンプレートプロジェクトを複製して作成し、ビルドでDLL出力。生成には`.github/agents/activities.agent.md`を利用。
 
 ## エラーハンドリング方針
 - 読み込み失敗: エラーをログ。必須ワークフロー欠落時は起動失敗または警告運転を選択できるよう設計。
@@ -53,3 +57,4 @@
 - ElsaServer内にロードサービス、起動ハンドラ、ステータスパブリッシャを分離。
 - RunTaskId紐づけはスレッドセーフなディクショナリで保持。
 - JSONスキーマ/ルール検証をユニットテスト可能なサービスとして実装。
+- 実装順序は「詳細設計→単体テスト→実装→テスト」を厳守し、計画/進捗をplans配下に記録する。

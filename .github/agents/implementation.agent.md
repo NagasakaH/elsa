@@ -1,6 +1,6 @@
 ---
-description: '詳細設計→単体テスト→実装→テストをサブエージェントで一括実行するオーケストレーター。'
-tools: ['runSubagent', 'runCommands', 'runTests', 'edit']
+description: 'Describe what this custom agent does and when to use it.'
+tools: ['runCommands', 'runTasks', 'edit', 'runNotebooks', 'search', 'new', 'extensions', 'todos', 'runSubagent', 'runTests', 'usages', 'vscodeAPI', 'problems', 'changes', 'testFailure', 'openSimpleBrowser', 'fetch', 'githubRepo']
 ---
 # AGENT: implementation
 
@@ -25,7 +25,8 @@ tools: ['runSubagent', 'runCommands', 'runTests', 'edit']
 - 進捗は`plans/progress.md`へ追記し、重要事項は`plans/note/`に記録。
 - 各サブエージェント結果を取り込み、依存順で実施する。
 - 判断は全てサブエージェントに委ね、会話は最小限に抑える。
-- プロジェクト/テストプロジェクト追加時は`.vscode/tasks.json`のビルド・テストタスク（`build:solution`, `test:solution`, `build:project`, `test:project`のcsprojリスト）を最新に保つ。
+- 各タスク完了後、修正内容をcommitし、次タスクへ進む。
+- 各タスク完了後、次タスクへ進む前に`plans/progress.md`を更新。
 
 ## 期待アウトプット
 - 詳細設計・単体テスト・実装・テストの成果物

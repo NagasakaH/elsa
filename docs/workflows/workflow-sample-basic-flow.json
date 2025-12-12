@@ -1,0 +1,175 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "workflow-sample-basic-flow-v1",
+  "definitionId": "sample-basic-flow",
+  "name": "SampleBasicFlow",
+  "createdAt": "2025-12-12T00:00:00.000000+00:00",
+  "version": 1,
+  "toolVersion": "3.6.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": false,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "root-0001",
+    "nodeId": "SampleBasicFlow:root-0001",
+    "name": "Flowchart",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Sample workflow started"
+          }
+        },
+        "id": "log-start",
+        "nodeId": "SampleBasicFlow:root-0001:log-start",
+        "name": "WriteLineStart",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": true,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": { "x": -200, "y": -20 },
+            "size": { "width": 140, "height": 60 }
+          }
+        }
+      },
+      {
+        "status": {
+          "typeName": "ElsaServer.Messages.WorkflowStatusKind",
+          "expression": {
+            "type": "Literal",
+            "value": "Running"
+          }
+        },
+        "id": "publish-running",
+        "nodeId": "SampleBasicFlow:root-0001:publish-running",
+        "name": "PublishRunning",
+        "type": "ElsaServer.Activities.PublishWorkflowStatus",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": { "x": 40, "y": -20 },
+            "size": { "width": 160, "height": 60 }
+          }
+        }
+      },
+      {
+        "delay": {
+          "typeName": "TimeSpan",
+          "expression": {
+            "type": "Literal",
+            "value": "00:00:01"
+          }
+        },
+        "id": "delay",
+        "nodeId": "SampleBasicFlow:root-0001:delay",
+        "name": "ShortDelay",
+        "type": "Elsa.Delay",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": { "x": 260, "y": -20 },
+            "size": { "width": 140, "height": 60 }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Sample workflow finished"
+          }
+        },
+        "id": "log-end",
+        "nodeId": "SampleBasicFlow:root-0001:log-end",
+        "name": "WriteLineEnd",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": { "x": 480, "y": -20 },
+            "size": { "width": 140, "height": 60 }
+          }
+        }
+      },
+      {
+        "status": {
+          "typeName": "ElsaServer.Messages.WorkflowStatusKind",
+          "expression": {
+            "type": "Literal",
+            "value": "Finished"
+          }
+        },
+        "id": "publish-finished",
+        "nodeId": "SampleBasicFlow:root-0001:publish-finished",
+        "name": "PublishFinished",
+        "type": "ElsaServer.Activities.PublishWorkflowStatus",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": { "x": 700, "y": -20 },
+            "size": { "width": 160, "height": 60 }
+          }
+        }
+      }
+    ],
+    "variables": [],
+    "connections": [
+      {
+        "source": { "activity": "log-start", "port": "Done" },
+        "target": { "activity": "publish-running", "port": "In" }
+      },
+      {
+        "source": { "activity": "publish-running", "port": "Done" },
+        "target": { "activity": "delay", "port": "In" }
+      },
+      {
+        "source": { "activity": "delay", "port": "Done" },
+        "target": { "activity": "log-end", "port": "In" }
+      },
+      {
+        "source": { "activity": "log-end", "port": "Done" },
+        "target": { "activity": "publish-finished", "port": "In" }
+      }
+    ]
+  }
+}
