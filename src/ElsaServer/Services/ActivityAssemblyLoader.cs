@@ -1,6 +1,7 @@
 using System.Reflection;
 using Elsa.Workflows;
 using ElsaServer.Options;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -11,20 +12,23 @@ public class ActivityAssemblyLoader
     private readonly ActivityAssemblyOptions _options;
     private readonly IActivityRegistry _activityRegistry;
     private readonly ILogger<ActivityAssemblyLoader> _logger;
+    private readonly IHostEnvironment _environment;
 
     public ActivityAssemblyLoader(
         IOptions<ActivityAssemblyOptions> options,
         IActivityRegistry activityRegistry,
-        ILogger<ActivityAssemblyLoader> logger)
+        ILogger<ActivityAssemblyLoader> logger,
+        IHostEnvironment environment)
     {
         _options = options.Value;
         _activityRegistry = activityRegistry;
         _logger = logger;
+        _environment = environment;
     }
 
     public async Task LoadAsync(CancellationToken cancellationToken)
     {
-        var basePath = Path.GetFullPath(_options.Directory);
+        var basePath = ResolvePath(_options.Directory);
         if (!Directory.Exists(basePath))
         {
             if (_options.Strict)
@@ -63,5 +67,20 @@ public class ActivityAssemblyLoader
                 _logger.LogWarning(ex, message);
             }
         }
+    }
+
+    private string ResolvePath(string directory)
+    {
+        if (Path.IsPathRooted(directory))
+            return directory;
+
+        var candidates = new[]
+        {
+            Path.GetFullPath(Path.Combine(_environment.ContentRootPath, directory)),
+            Path.GetFullPath(Path.Combine(_environment.ContentRootPath, "..", "..", directory))
+        };
+
+        var existing = candidates.FirstOrDefault(Directory.Exists);
+        return existing ?? candidates.Last();
     }
 }
