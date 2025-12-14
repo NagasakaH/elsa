@@ -6,25 +6,27 @@ namespace ElsaServer.Hosted;
 
 public class StartupInitializationHostedService : IHostedService
 {
-    private readonly ActivityAssemblyLoader _activityLoader;
-    private readonly WorkflowCatalogLoader _catalogLoader;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<StartupInitializationHostedService> _logger;
 
     public StartupInitializationHostedService(
-        ActivityAssemblyLoader activityLoader,
-        WorkflowCatalogLoader catalogLoader,
+        IServiceScopeFactory scopeFactory,
         ILogger<StartupInitializationHostedService> logger)
     {
-        _activityLoader = activityLoader;
-        _catalogLoader = catalogLoader;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Loading activities and workflows at startup");
-        await _activityLoader.LoadAsync(cancellationToken);
-        await _catalogLoader.LoadAsync(cancellationToken);
+
+        using var scope = _scopeFactory.CreateScope();
+        var activityLoader = scope.ServiceProvider.GetRequiredService<ActivityAssemblyLoader>();
+        var catalogLoader = scope.ServiceProvider.GetRequiredService<WorkflowCatalogLoader>();
+
+        await activityLoader.LoadAsync(cancellationToken);
+        await catalogLoader.LoadAsync(cancellationToken);
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

@@ -131,15 +131,15 @@ class Program
 
             services.AddSingleton<RunContextStore>();
             services.AddSingleton<WorkflowCatalog>();
-            services.AddSingleton<WorkflowCatalogLoader>();
-            services.AddSingleton<ActivityAssemblyLoader>();
+            services.AddScoped<WorkflowCatalogLoader>();
+            services.AddScoped<ActivityAssemblyLoader>();
             services.AddSingleton<IPayloadMapper, DefaultPayloadMapper>();
-            services.AddSingleton<IWorkflowLauncher, WorkflowLauncher>();
-            services.AddSingleton<WorkflowStatusPublisher>();
-            services.AddSingleton<IWorkflowStatusPublisher>(sp => sp.GetRequiredService<WorkflowStatusPublisher>());
-            services.AddSingleton<INotificationHandler<WorkflowStarted>>(sp => sp.GetRequiredService<WorkflowStatusPublisher>());
-            services.AddSingleton<INotificationHandler<WorkflowExecuted>>(sp => sp.GetRequiredService<WorkflowStatusPublisher>());
-            services.AddSingleton<INotificationHandler<WorkflowFinished>>(sp => sp.GetRequiredService<WorkflowStatusPublisher>());
+            services.AddScoped<IWorkflowLauncher, WorkflowLauncher>();
+            services.AddScoped<WorkflowStatusPublisher>();
+            services.AddScoped<IWorkflowStatusPublisher>(sp => sp.GetRequiredService<WorkflowStatusPublisher>());
+            services.AddScoped<INotificationHandler<WorkflowStarted>>(sp => sp.GetRequiredService<WorkflowStatusPublisher>());
+            services.AddScoped<INotificationHandler<WorkflowExecuted>>(sp => sp.GetRequiredService<WorkflowStatusPublisher>());
+            services.AddScoped<INotificationHandler<WorkflowFinished>>(sp => sp.GetRequiredService<WorkflowStatusPublisher>());
             services.AddHostedService<StartupInitializationHostedService>();
 
         // CORSの設定

@@ -12,3 +12,6 @@
 - 2025-12-12: ElsaServer.UnitTestsプロジェクト追加、RunContextStore/PayloadMapper/WorkflowLauncher/StatusPublisher/StartWorkflowConsumerの単体テスト実装、ソリューション登録。
 - 2025-12-12: Program.csの活動登録をAddElsaチェーンに修正、`dotnet test NagasakaEventSystem.sln` でユニットテスト11件が成功。
 - 2025-12-12: StartWorkflowIntegrationTestsで MassTransit InMemory 受信エンドポイントとロガー登録を追加し、Running/Finished のステータスイベント確認までパス。
+- 2025-12-13: 本番DIでのスコープミスマッチを修正（Launcher/StatusPublisher/LoaderをScoped化しHostedServiceはスコープ生成で実行）、ElsaServerビルド成功・統合テスト再パス。
+- 2025-12-13: ワークフロー/アクティビティ読込ディレクトリをContentRoot基準＋リポジトリルートfallbackで解決するよう改善、設定値は`docs/workflows`固定のままビルド・統合テスト再パス。
+- 2025-12-13: ストア登録前に既存定義を削除しクリーンなJSONのみを保存するようWorkflowCatalogLoaderを修正（NotFoundが残らないように）、ビルド・統合テスト再パス。
