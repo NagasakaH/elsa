@@ -21,6 +21,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{ECB7A2DB
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaServer.UnitTests", "tests\ElsaServer.UnitTests\ElsaServer.UnitTests.csproj", "{696C6261-FE62-4993-A22E-EFC5EEBCF6EF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Activities.Testing", "tests\Activities.Testing\Activities.Testing.csproj", "{E6B12F9B-5A3A-4D19-BD58-9E3C926C3B9E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Activities.Templates.CustomActivityTemplate.UnitTests", "tests\Activities.Templates.CustomActivityTemplate.UnitTests\Activities.Templates.CustomActivityTemplate.UnitTests.csproj", "{3A1136C1-0A08-4B2A-8C6E-9B8F6A0A4F3C}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaServer.IntegrationTests", "tests\ElsaServer.IntegrationTests\ElsaServer.IntegrationTests.csproj", "{AB17579F-5BE1-4CE0-BD27-2E902926C9A1}"
 EndProject
 Global

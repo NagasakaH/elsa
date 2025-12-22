@@ -6,6 +6,8 @@
     <ProjectReference Include="..\External\Elsa.ServiceBus.MassTransit\Elsa.ServiceBus.MassTransit.csproj" />
     <ProjectReference Include="..\External\Elsa.ServiceBus.MassTransit.RabbitMq\Elsa.ServiceBus.MassTransit.RabbitMq.csproj" />
     <ProjectReference Include="..\RpcService\RpcService.csproj" />
+    <ProjectReference Include="..\Activities.Loader\Activities.Loader.csproj" />
+    <ProjectReference Include="..\Activities.Contracts\Activities.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

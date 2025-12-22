@@ -1,6 +1,7 @@
 using ElsaServer.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using NagasakaEventSystem.Activities.Loader;
 
 namespace ElsaServer.Hosted;
 
@@ -22,10 +23,16 @@ public class StartupInitializationHostedService : IHostedService
         _logger.LogInformation("Loading activities and workflows at startup");
 
         using var scope = _scopeFactory.CreateScope();
+        // Prefer the new loader (supports module hook + better dependency resolution),
+        // but keep the existing loader for backward compatibility.
+        var directoryLoader = scope.ServiceProvider.GetService<DirectoryActivityAssemblyLoader>();
         var activityLoader = scope.ServiceProvider.GetRequiredService<ActivityAssemblyLoader>();
         var catalogLoader = scope.ServiceProvider.GetRequiredService<WorkflowCatalogLoader>();
 
-        await activityLoader.LoadAsync(cancellationToken);
+        if (directoryLoader != null)
+            await directoryLoader.LoadAndRegisterAsync(cancellationToken);
+        else
+            await activityLoader.LoadAsync(cancellationToken);
         await catalogLoader.LoadAsync(cancellationToken);
     }
 

@@ -23,6 +23,7 @@ using ElsaServer.Activities;
 using Elsa.ServiceBus.MassTransit.RabbitMq.Options;
 using MassTransit;
 using Elsa.Mediator.Contracts;
+using NagasakaEventSystem.Activities.Loader;
 
 class Program
 {
@@ -133,6 +134,10 @@ class Program
             services.AddSingleton<WorkflowCatalog>();
             services.AddScoped<WorkflowCatalogLoader>();
             services.AddScoped<ActivityAssemblyLoader>();
+
+            // Directory activity loader (loads DLLs from configured folder and registers into Elsa).
+            services.AddScoped<IActivityRegistrar, ElsaActivityRegistrar>();
+            services.AddScoped<DirectoryActivityAssemblyLoader>();
             services.AddSingleton<IPayloadMapper, DefaultPayloadMapper>();
             services.AddScoped<IWorkflowLauncher, WorkflowLauncher>();
             services.AddScoped<WorkflowStatusPublisher>();
