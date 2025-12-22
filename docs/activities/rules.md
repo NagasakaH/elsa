@@ -23,5 +23,21 @@
 - 機能テスト: 入力→出力が期待通りになること。
 - エラーパス: 定義したエラーOutcomesが発火すること。
 
+### アクティビティ単体テストのテンプレ
+- テスト基盤: `tests/Activities.Testing/`（submodulesの `Elsa.Testing.Shared` を参考に、リポジトリ内で完結する最小構成のフィクスチャを用意）
+- サンプル: `tests/Activities.Templates.CustomActivityTemplate.UnitTests/`
+
+#### テストを書き始める手順
+1. アクティビティプロジェクトを追加（例: `src/Activities.Templates/...`）
+2. テストプロジェクトを追加し、以下を参照
+	- `tests/Activities.Testing/Activities.Testing.csproj`
+	- 対象アクティビティの `*.csproj`
+3. `ActivityTestFixture` を使って実行し、`Journal.ActivityExecutionContexts` から出力を検証
+
+#### 実行コマンド
+```bash
+dotnet test ./NagasakaEventSystem.sln
+```
+
 ## サンプル
 - テンプレートプロジェクトの例を`Activities/`配下に配置し、Publish/Subscribeアクティビティの雛形を提供する。
