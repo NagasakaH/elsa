@@ -1,0 +1,91 @@
+{
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+  "id": "workflow-sample-start-v1",
+  "definitionId": "sample-start",
+  "name": "SampleStart",
+  "createdAt": "2025-12-12T00:00:00.000000+00:00",
+  "version": 1,
+  "toolVersion": "3.6.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": false,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "id": "root-0001",
+    "nodeId": "SampleStart:root-0001",
+    "name": "Flowchart",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Sample workflow started"
+          }
+        },
+        "id": "log-start",
+        "nodeId": "SampleStart:root-0001:log-start",
+        "name": "WriteLineStart",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": true,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": { "x": -40, "y": -20 },
+            "size": { "width": 140, "height": 60 }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Sample workflow finished"
+          }
+        },
+        "id": "log-end",
+        "nodeId": "SampleStart:root-0001:log-end",
+        "name": "WriteLineEnd",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": { "x": 200, "y": -20 },
+            "size": { "width": 140, "height": 60 }
+          }
+        }
+      }
+    ],
+    "variables": [],
+    "connections": [
+      {
+        "source": { "activity": "log-start", "port": "Done" },
+        "target": { "activity": "log-end", "port": "In" }
+      }
+    ]
+  }
+}
