@@ -110,7 +110,7 @@ public sealed class DirectoryActivityAssemblyLoader
     private string ResolvePath(string directory)
     {
         if (Path.IsPathRooted(directory))
-            return directory;
+            return EnsureWithinContentRoot(directory);
 
         var candidates = new[]
         {
@@ -119,6 +119,17 @@ public sealed class DirectoryActivityAssemblyLoader
         };
 
         var existing = candidates.FirstOrDefault(Directory.Exists);
-        return existing ?? candidates.Last();
+        return EnsureWithinContentRoot(existing ?? candidates.Last());
+    }
+
+    private string EnsureWithinContentRoot(string resolvedPath)
+    {
+        var root = Path.GetFullPath(_environment.ContentRootPath);
+        var parentRoot = Path.GetFullPath(Path.Combine(root, "..", ".."));
+        var fullPath = Path.GetFullPath(resolvedPath);
+        if (!fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase) &&
+            !fullPath.StartsWith(parentRoot, StringComparison.OrdinalIgnoreCase))
+            throw new UnauthorizedAccessException($"Path traversal detected: {resolvedPath} is outside allowed directories.");
+        return fullPath;
     }
 }
