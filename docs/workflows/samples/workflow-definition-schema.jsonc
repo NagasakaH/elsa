@@ -1,0 +1,112 @@
+{
+  // 推奨スキーマ。JSONC なのでコメント付きのサンプルとして利用してください（このままインポートは不可）。
+  "$schema": "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json",
+
+  // ワークフロー定義 ID（同じ定義を更新する場合は固定）。
+  "definitionId": "<string>",
+  // バージョン固有 ID（省略可）。
+  "id": "<string>",
+  // 表示名。
+  "name": "<string>",
+  // 作成日時（ISO 8601）。
+  "createdAt": "2025-12-11T12:00:00.000000+00:00",
+  // ツールバージョン。
+  "toolVersion": "3.6.0.0",
+  // 定義バージョン。
+  "version": 1,
+
+  // 変数定義。
+  "variables": [
+    // { "id": "", "name": "", "typeName": "String", "isArray": false, "value": null, "storageDriverTypeName": null }
+  ],
+
+  // 入力定義。
+  "inputs": [
+    // {
+    //   "type": "System.String", "name": "Input1", "displayName": "Input1",
+    //   "description": "", "category": "", "uiHint": "text", "storageDriverType": null
+    // }
+  ],
+
+  // 出力定義。
+  "outputs": [
+    // { "type": "System.String", "name": "Output1", "displayName": "Output1", "description": "", "category": "" }
+  ],
+
+  // 任意のアウトカム名。
+  "outcomes": [],
+
+  // 任意のメタデータ。
+  "customProperties": {},
+
+  // 状態フラグ。
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": false,
+
+  // 動作オプション。
+  "options": {
+    "usableAsActivity": false,
+    "autoUpdateConsumingWorkflows": false,
+    "activityCategory": null,
+    "activationStrategyType": null,
+    "incidentStrategyType": null,
+    "commitStrategyName": null
+  },
+
+  // ルートアクティビティ（ここでは Flowchart を想定）。
+  "root": {
+    "id": "root-id",
+    "nodeId": "Workflow1:root-id",
+    "name": "Flowchart1",
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "customProperties": {
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "metadata": {},
+
+    // 子アクティビティ配列。
+    "activities": [
+      // 例: HttpEndpoint
+      {
+        "path": { "typeName": "String", "expression": { "type": "Literal", "value": "sample" } },
+        "supportedMethods": { "typeName": "List<String>", "expression": { "type": "Literal", "value": "[\"GET\"]" } },
+        "authorize": { "typeName": "Boolean", "expression": { "type": "Literal", "value": false } },
+        "policy": { "typeName": "String", "expression": { "type": "Literal" } },
+        "id": "http-activity-id",
+        "nodeId": "Workflow1:root-id:http-activity-id",
+        "name": "HttpEndpoint1",
+        "type": "Elsa.HttpEndpoint",
+        "version": 1,
+        "customProperties": { "canStartWorkflow": true, "runAsynchronously": false },
+        "metadata": {}
+      },
+      // 例: WriteLine
+      {
+        "text": { "typeName": "String", "expression": { "type": "Literal", "value": "Hello" } },
+        "id": "write-activity-id",
+        "nodeId": "Workflow1:root-id:write-activity-id",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": { "canStartWorkflow": false, "runAsynchronously": false },
+        "metadata": {}
+      }
+    ],
+
+    // ノードスコープの変数。
+    "variables": [],
+
+    // アクティビティ接続。
+    "connections": [
+      {
+        "source": { "activity": "http-activity-id", "port": "Done" },
+        "target": { "activity": "write-activity-id", "port": "In" }
+      }
+    ]
+  }
+}
