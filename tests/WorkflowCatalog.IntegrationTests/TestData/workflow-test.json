@@ -1,0 +1,12 @@
+{
+  "definitionId": "test-workflow",
+  "name": "Test Workflow",
+  "version": 1,
+  "isLatest": true,
+  "isPublished": true,
+  "root": {
+    "type": "Elsa.Sequence",
+    "id": "sequence-1",
+    "activities": []
+  }
+}

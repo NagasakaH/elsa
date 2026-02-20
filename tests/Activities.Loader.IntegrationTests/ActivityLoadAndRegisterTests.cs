@@ -3,27 +3,27 @@ using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using NagasakaEventSystem.Activities.Contracts;
 using NagasakaEventSystem.Activities.Loader;
-using Xunit;
+using FluentAssertions;
 
-namespace ElsaServer.UnitTests.Activities;
+namespace Activities.Loader.IntegrationTests;
 
-public class DirectoryActivityAssemblyLoaderTests
+[Trait("Category", "Integration")]
+public class ActivityLoadAndRegisterTests
 {
     [Fact]
-    public async Task Loads_Dlls_From_Directory_And_Registers_Activities()
+    public async Task LoadAndRegister_CustomActivityTemplate_RegistersIActivityModule()
     {
+        // Arrange
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddElsa();
 
-        // Hook registrar to Elsa's activity registry.
-        var captured = new List<Type>();
-        services.AddScoped<IActivityRegistrar>(_ => new CapturingRegistrar(captured));
+        var registeredModules = new List<IActivityModule>();
+        var registeredTypes = new List<Type>();
 
-        // Fake environment.
+        services.AddScoped<IActivityRegistrar>(_ => new CapturingRegistrar(registeredTypes));
         services.AddSingleton<IHostEnvironment>(new TestHostEnvironment
         {
             ContentRootPath = Directory.GetCurrentDirectory()
@@ -33,10 +33,19 @@ public class DirectoryActivityAssemblyLoaderTests
         var activitiesDir = Path.Combine(outputDir, "Activities");
         Directory.CreateDirectory(activitiesDir);
 
-        // Copy template DLL next to the test output so the loader can find it.
+        // Copy CustomActivityTemplate DLL to activities directory
         var templateDll = FindFileUpwards(
             startDirectory: AppContext.BaseDirectory,
             relativePath: Path.Combine("src", "Activities.Templates", "CustomActivityTemplate", "bin", "Debug", "net8.0", "CustomActivityTemplate.dll"));
+
+        if (!File.Exists(templateDll))
+        {
+            // Try Release build path
+            templateDll = FindFileUpwards(
+                startDirectory: AppContext.BaseDirectory,
+                relativePath: Path.Combine("src", "Activities.Templates", "CustomActivityTemplate", "bin", "Release", "net8.0", "CustomActivityTemplate.dll"));
+        }
+
         Assert.True(File.Exists(templateDll), $"Template DLL not found: {templateDll}");
         File.Copy(templateDll, Path.Combine(activitiesDir, Path.GetFileName(templateDll)), overwrite: true);
 
@@ -54,9 +63,11 @@ public class DirectoryActivityAssemblyLoaderTests
         using var scope = sp.CreateScope();
         var loader = scope.ServiceProvider.GetRequiredService<DirectoryActivityAssemblyLoader>();
 
+        // Act
         await loader.LoadAndRegisterAsync(CancellationToken.None);
 
-        Assert.Contains(captured, t => t.FullName == "NagasakaEventSystem.Activities.Templates.CustomActivityTemplate.SampleCustomActivity");
+        // Assert
+        registeredTypes.Should().Contain(t => t.FullName == "NagasakaEventSystem.Activities.Templates.CustomActivityTemplate.SampleCustomActivity");
     }
 
     private sealed class CapturingRegistrar : IActivityRegistrar
@@ -98,7 +109,6 @@ public class DirectoryActivityAssemblyLoaderTests
             current = current.Parent;
         }
 
-        // return last candidate for assertion message.
         return Path.Combine(new DirectoryInfo(startDirectory).Root.FullName, relativePath);
     }
 }

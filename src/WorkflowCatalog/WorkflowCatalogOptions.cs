@@ -1,4 +1,4 @@
-namespace ElsaServer.Options;
+namespace NagasakaEventSystem.WorkflowCatalog;
 
 public class WorkflowCatalogOptions
 {
