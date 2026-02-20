@@ -14,6 +14,7 @@ using ElsaServer.Messages;
 using ElsaServer.Options;
 using ElsaServer.Services;
 using NagasakaEventSystem.Activities.Loader;
+using NagasakaEventSystem.WorkflowCatalog;
 
 class Program
 {

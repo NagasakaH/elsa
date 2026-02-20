@@ -17,7 +17,7 @@ date: 2026-02-20T07:19:25+00:00
 
 | テストID | テスト種別 | テスト名 | 対象要件 | テストファイル |
 |---------|-----------|---------|---------|---------------|
-| UT-001 | 単体 | Loads_Dlls_From_Directory_And_Registers_Activities | FR-001 | DirectoryActivityAssemblyLoaderTests.cs |
+| UT-001 | 単体 | Loads_Dlls_From_Directory_And_Registers_Activities | FR-001 | Activities.Loader.UnitTests/DirectoryActivityAssemblyLoaderTests.cs |
 | UT-002 | 単体 | Map_Copies_With_OrdinalIgnoreCase | FR-005 | DefaultPayloadMapperTests.cs |
 | UT-002b | 単体 | Map_Returns_Empty_Dictionary_When_Null | FR-005 | DefaultPayloadMapperTests.cs |
 | UT-003 | 単体 | Launches_Workflow_With_Correlation_And_Properties | FR-005 | WorkflowLauncherTests.cs |
@@ -29,11 +29,21 @@ date: 2026-02-20T07:19:25+00:00
 | UT-007b | 単体 | TryAdd_Denies_Duplicate_RunTaskId | NFR-003 | RunContextStoreTests.cs |
 | UT-007c | 単体 | TryRemove_Removes_And_Returns_TaskId | NFR-003 | RunContextStoreTests.cs |
 | UT-008 | 単体 | Consume_Invokes_WorkflowLauncher | FR-005 | StartWorkflowConsumerTests.cs |
+| UT-009 | 単体 | Set_AddsEntryToCatalog | FR-008 | WorkflowCatalog.UnitTests/WorkflowCatalogTests.cs |
+| UT-010 | 単体 | TryGet_ReturnsFalse_WhenTaskIdNotFound | FR-008 | WorkflowCatalog.UnitTests/WorkflowCatalogTests.cs |
+| UT-011 | 単体 | TryGet_IsCaseInsensitive | FR-008 | WorkflowCatalog.UnitTests/WorkflowCatalogTests.cs |
+| UT-012 | 単体 | Remove_RemovesEntryFromCatalog | FR-008 | WorkflowCatalog.UnitTests/WorkflowCatalogTests.cs |
+| UT-013 | 単体 | List_ReturnsAllEntries | FR-008 | WorkflowCatalog.UnitTests/WorkflowCatalogTests.cs |
+| UT-014 | 単体 | FileNamePattern_MatchesValidWorkflowFiles | FR-008 | WorkflowCatalog.UnitTests/WorkflowCatalogLoaderTests.cs |
 | IT-001 | 結合 | StartWorkflowCommand_Publishes_Status_Events | FR-005, FR-006 | StartWorkflowIntegrationTests.cs |
+| IT-002 | 結合 | LoadAndRegister_CustomActivityTemplate_RegistersIActivityModule | FR-001 | Activities.Loader.IntegrationTests/ActivityLoadAndRegisterTests.cs |
+| IT-003 | 結合 | TestDataFile_ContainsValidJson | FR-008 | WorkflowCatalog.IntegrationTests/WorkflowCatalogLoadTests.cs |
 | E2E-001 | E2E | Can_Login_To_ElsaStudio | FR-004 | ElsaStudioLoginTests.cs |
 | E2E-002 | E2E | Can_Navigate_To_Workflow_Definitions | FR-004 | WorkflowEditorTests.cs |
 | E2E-002b | E2E | Can_Create_New_Workflow | FR-004 | WorkflowEditorTests.cs |
 | E2E-003 | E2E | Can_View_Activity_Catalog | FR-002 | WorkflowEditorTests.cs |
+| E2E-004 | E2E | CustomActivity_Appears_In_ActivityCatalog | FR-001 | Activities.Loader.E2ETests/ActivityVisibilityTests.cs |
+| E2E-005 | E2E | CatalogWorkflows_AppearInWorkflowDefinitions | FR-008 | WorkflowCatalog.E2ETests/WorkflowJsonManagementTests.cs |
 
 ## 2. 単体テスト詳細
 

@@ -2,6 +2,7 @@ using ElsaServer.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NagasakaEventSystem.Activities.Loader;
+using NagasakaEventSystem.WorkflowCatalog;
 
 namespace ElsaServer.Hosted;
 

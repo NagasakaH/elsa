@@ -63,7 +63,7 @@ graph TB
 | **アクティビティ契約** | `Activities.Contracts` | `IActivityModule` 等のインターフェース定義。カスタムアクティビティ DLL が実装すべき契約を提供 |
 | **アクティビティローダー** | `Activities.Loader` | DLL 動的ロード・Elsa への登録を担当。`DirectoryActivityAssemblyLoader` が中核クラス |
 | **サンプルアクティビティ** | `Activities.Templates.CustomActivityTemplate` | カスタムアクティビティ DLL プラグインのサンプル実装 |
-| **ワークフローカタログ** | `ElsaServer/Services/WorkflowCatalog` | インメモリ ワークフロー定義レジストリ。`ConcurrentDictionary` で管理 |
+| **ワークフローカタログ** | `WorkflowCatalog` | インメモリ ワークフロー定義レジストリ。`ConcurrentDictionary` で管理。`NagasakaEventSystem.WorkflowCatalog` 名前空間で独立ライブラリとして分離 |
 | **ワークフロー起動** | `ElsaServer/Services/WorkflowLauncher` | ワークフロー実行のオーケストレーション。検証・実行・エラーハンドリング |
 | **ステータス通知** | `ElsaServer/Services/WorkflowStatusPublisher` | ワークフロー実行状態の通知。リトライ機能付き |
 | **メッセージ消費** | `ElsaServer/Consumers/StartWorkflowConsumer` | MassTransit コンシューマ。`StartWorkflowCommand` を受信してワークフロー実行 |

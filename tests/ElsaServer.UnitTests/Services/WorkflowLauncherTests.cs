@@ -7,6 +7,7 @@ using ElsaServer.Messages;
 using ElsaServer.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
+using NagasakaEventSystem.WorkflowCatalog;
 using NSubstitute;
 using Xunit;
 

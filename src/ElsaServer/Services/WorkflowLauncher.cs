@@ -2,6 +2,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Options;
 using ElsaServer.Messages;
 using Microsoft.Extensions.Logging;
+using NagasakaEventSystem.WorkflowCatalog;
 
 namespace ElsaServer.Services;
 

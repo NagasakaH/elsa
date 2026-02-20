@@ -5,6 +5,7 @@
     <ProjectReference Include="..\Common\RabbitMQService\RabbitMQService.csproj" />
     <ProjectReference Include="..\Activities.Loader\Activities.Loader.csproj" />
     <ProjectReference Include="..\Activities.Contracts\Activities.Contracts.csproj" />
+    <ProjectReference Include="..\WorkflowCatalog\WorkflowCatalog.csproj" />
   </ItemGroup>
 
   <ItemGroup>
