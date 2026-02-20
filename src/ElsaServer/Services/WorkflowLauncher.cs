@@ -37,6 +37,13 @@ public class WorkflowLauncher : IWorkflowLauncher
 
     public async Task LaunchAsync(StartWorkflowCommand command, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(command.TaskId) || string.IsNullOrWhiteSpace(command.RunTaskId))
+        {
+            _logger.LogWarning("Invalid command: TaskId or RunTaskId is null/empty");
+            await _statusPublisher.PublishAsync(command.TaskId ?? "", command.RunTaskId ?? "", WorkflowStatusKind.Error, "TaskId and RunTaskId are required", cancellationToken);
+            return;
+        }
+
         if (!_catalog.TryGet(command.TaskId, out var entry))
         {
             await _statusPublisher.PublishAsync(command.TaskId, command.RunTaskId, WorkflowStatusKind.Error, "Unknown TaskId", cancellationToken);

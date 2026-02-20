@@ -102,6 +102,11 @@ public class WorkflowStatusPublisher :
                 _logger.LogWarning(ex, "Failed to publish status event (attempt {Attempt}/{Attempts})", i, attempts);
                 await Task.Delay(TimeSpan.FromSeconds(_options.StatusPublishRetryDelaySeconds), cancellationToken);
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Final attempt to publish status event failed (attempt {Attempt}/{Attempts})", i, attempts);
+                throw;
+            }
         }
     }
 
