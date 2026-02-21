@@ -16,9 +16,7 @@ public class ActivityVisibilityTests : IClassFixture<PlaywrightFixture>
     [Fact]
     public async Task CustomActivity_Appears_In_ActivityCatalog()
     {
-        var page = await _fixture.Browser.NewPageAsync();
-
-        try
+        await _fixture.RunWithPageAsync(nameof(CustomActivity_Appears_In_ActivityCatalog), async page =>
         {
             // Navigate to login page
             await page.GotoAsync(_fixture.BaseUrl, new PageGotoOptions
@@ -62,10 +60,6 @@ public class ActivityVisibilityTests : IClassFixture<PlaywrightFixture>
             // This test verifies the custom DLL was loaded successfully
             var bodyContent = await page.ContentAsync();
             bodyContent.Should().NotBeNullOrEmpty("Workflow editor should be loaded");
-        }
-        finally
-        {
-            await page.CloseAsync();
-        }
+        });
     }
 }

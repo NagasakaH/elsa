@@ -539,6 +539,12 @@ docker compose up -d
 
 # E2Eテストを実行
 ELSA_BASE_URL=https://localhost:5001 dotnet test --filter "Category=E2E"
+
+# chrome-novnc を使って実行する場合
+E2E_CHROME_NOVNC_CDP_URL=http://127.0.0.1:9222 \
+E2E_SCREENSHOT_DIR=./artifacts/e2e-screenshots \
+ELSA_BASE_URL=https://localhost:5001 \
+dotnet test --filter "Category=E2E"
 ```
 
 ### 全テスト
@@ -571,10 +577,13 @@ E2Eテスト用の共有フィクスチャで、Playwrightブラウザインス�
 | `Playwright` | Playwrightインスタンス |
 | `Browser` | Chromiumブラウザインスタンス |
 | `BaseUrl` | テスト対象のベースURL（環境変数で上書き可能） |
+| `ScreenshotRootDirectory` | スクリーンショット出力先（`E2E_SCREENSHOT_DIR` で上書き可能） |
 
 **ブラウザ設定**
-- ヘッドレスモード: 有効
+- `E2E_CHROME_NOVNC_CDP_URL` が設定されている場合は `chrome-novnc` のCDPへ接続
+- 未設定時はローカルChromiumを起動（`E2E_HEADLESS` でヘッドレス切替、既定: `true`）
 - SSL証明書エラー: 無視（開発環境向け）
+- 各テスト完了時に成功/失敗スクリーンショットを保存
 
 ### ActivityTestFixture
 

@@ -16,9 +16,7 @@ public class WorkflowJsonManagementTests : IClassFixture<PlaywrightFixture>
     [Fact]
     public async Task CatalogWorkflows_AppearInWorkflowDefinitions()
     {
-        var page = await _fixture.Browser.NewPageAsync();
-
-        try
+        await _fixture.RunWithPageAsync(nameof(CatalogWorkflows_AppearInWorkflowDefinitions), async page =>
         {
             // Navigate to login page
             await page.GotoAsync(_fixture.BaseUrl, new PageGotoOptions
@@ -50,10 +48,6 @@ public class WorkflowJsonManagementTests : IClassFixture<PlaywrightFixture>
             // Verify the workflow definitions page is loaded
             var content = await page.ContentAsync();
             content.Should().NotBeNullOrEmpty("Workflow definitions page should have content");
-        }
-        finally
-        {
-            await page.CloseAsync();
-        }
+        });
     }
 }
