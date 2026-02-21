@@ -537,15 +537,19 @@ dotnet test --filter "Category=Integration"
 cd /workspaces/dev-process/submodules/elsa
 docker compose up -d
 
+# 推奨: ローカル/CI共通スクリプトで実行
+bash ./scripts/run-e2e-tests.sh
+
 # E2Eテストを実行
 ELSA_BASE_URL=https://localhost:5001 dotnet test --filter "Category=E2E"
 
 # chrome-novnc を使って実行する場合
-E2E_CHROME_NOVNC_CDP_URL=http://127.0.0.1:9222 \
+START_CHROME_NOVNC=true \
 E2E_SCREENSHOT_DIR=./artifacts/e2e-screenshots \
-ELSA_BASE_URL=https://localhost:5001 \
-dotnet test --filter "Category=E2E"
+bash ./scripts/run-e2e-tests.sh
 ```
+
+CI では `.github/workflows/e2e-playwright.yml` から同じ `scripts/run-e2e-tests.sh` を実行し、スクリーンショットとTRXをアーティファクト化します。
 
 ### 全テスト
 

@@ -1,0 +1,43 @@
+name: E2E Playwright
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "scripts/run-e2e-tests.sh"
+      - "compose.yml"
+      - ".github/workflows/e2e-playwright.yml"
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Run E2E tests with chrome-novnc
+        run: bash ./scripts/run-e2e-tests.sh
+        env:
+          START_CHROME_NOVNC: "true"
+          PLAYWRIGHT_INSTALL_WITH_DEPS: "true"
+          ELSA_BASE_URL: "http://127.0.0.1:5001"
+          E2E_SCREENSHOT_DIR: "${{ github.workspace }}/artifacts/e2e-screenshots"
+
+      - name: Upload E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts
+          path: |
+            artifacts/**
+            **/TestResults/**/*.trx
+          if-no-files-found: warn

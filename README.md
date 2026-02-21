@@ -81,22 +81,24 @@ dotnet test --filter "Category!=E2E"
 ELSA_BASE_URL=https://localhost:5001 dotnet test --filter "Category=E2E"
 ```
 
+### ローカル / CI 共通のE2E実行スクリプト
+
+```bash
+# PostgreSQL/RabbitMQ起動・サーバー起動・E2E実行・後片付けまで自動化
+bash ./scripts/run-e2e-tests.sh
+```
+
 ### chrome-novnc で E2E + スクリーンショット実行
 
 ```bash
-# 1) Chrome + noVNC を起動（CDP:9222, noVNC:6080）
-docker run -d --rm --name chrome-novnc \
-  -p 6080:6080 -p 9222:9222 \
-  vital987/chrome-novnc
-
-# 2) E2E実行（スクリーンショット保存先を指定）
-ELSA_BASE_URL=https://localhost:5001 \
-E2E_CHROME_NOVNC_CDP_URL=http://127.0.0.1:9222 \
+# スクリプト側で vital987/chrome-novnc を起動してCDP接続
+START_CHROME_NOVNC=true \
 E2E_SCREENSHOT_DIR=./artifacts/e2e-screenshots \
-dotnet test --filter "Category=E2E"
+bash ./scripts/run-e2e-tests.sh
 ```
 
 スクリーンショットは `E2E_SCREENSHOT_DIR`（未指定時: `bin/.../artifacts/screenshots`）に保存されます。
+CI では `.github/workflows/e2e-playwright.yml` から同じスクリプトを実行します。
 
 ### カバレッジレポート生成
 
